@@ -7,6 +7,10 @@ using System;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Linq;
 using AsyncAwaitBestPractices;
 using Serilog;
 using Vatsim.Vatis.Atis;
@@ -31,6 +35,7 @@ public class VoiceServerConnection : IVoiceServerConnection
     private Timer? _refreshTokenTimer;
     private Timer? _heartbeatTimer;
     private string? _jwtToken;
+    private Process? _mumbleWorker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VoiceServerConnection"/> class.
@@ -55,6 +60,7 @@ public class VoiceServerConnection : IVoiceServerConnection
     /// <inheritdoc />
     public void Disconnect()
     {
+        StopMumbleWorker();
         _jwtToken = null;
 
         // Stop token refresh timer
@@ -70,19 +76,50 @@ public class VoiceServerConnection : IVoiceServerConnection
     public async Task AddOrUpdateBot(string? callsign, PutBotRequestDto dto, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        // CAN 的语音端是 Mumble，机器人由根目录 server/ATIS/mumble.py 管理，
-        // 没有 vATIS 的 HTTP bot API。桌面端的 FSD 连接负责公开席位，
-        // 这里不再向 VATSIM voice REST 端点发送请求。
-        await Task.CompletedTask;
-        Log.Information("CAN Mumble audio is managed by the CAN ATIS service: {Callsign}", callsign);
+        if (string.IsNullOrWhiteSpace(callsign) || dto.PcmData is null || dto.PcmData.Length == 0)
+            return;
+
+        cancellationToken.ThrowIfCancellationRequested();
+        StopMumbleWorker();
+        var worker = WorkerPath();
+        if (!File.Exists(worker))
+            throw new AtisBuilderException($"CAN Mumble worker is missing: {worker}");
+
+        var frequency = dto.Transceivers?.FirstOrDefault()?.Frequency ?? 0;
+        var cid = _appConfig.UserId.Trim();
+        var password = _appConfig.PasswordDecrypted;
+        var psi = new ProcessStartInfo
+        {
+            FileName = PythonPath(),
+            WorkingDirectory = Path.GetDirectoryName(worker) ?? AppContext.BaseDirectory,
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        psi.ArgumentList.Add(worker);
+        psi.ArgumentList.Add("--host"); psi.ArgumentList.Add("audio.ceruleanavi.net");
+        psi.ArgumentList.Add("--port"); psi.ArgumentList.Add("64738");
+        psi.ArgumentList.Add("--cid"); psi.ArgumentList.Add(cid);
+        psi.ArgumentList.Add("--password"); psi.ArgumentList.Add(password);
+        psi.ArgumentList.Add("--callsign"); psi.ArgumentList.Add(callsign);
+        psi.ArgumentList.Add("--frequency"); psi.ArgumentList.Add(frequency.ToString());
+        _mumbleWorker = Process.Start(psi);
+        if (_mumbleWorker is null)
+            throw new AtisBuilderException("Could not start the CAN Mumble worker.");
+        await _mumbleWorker.StandardInput.BaseStream.WriteAsync(dto.PcmData, cancellationToken);
+        await _mumbleWorker.StandardInput.BaseStream.FlushAsync(cancellationToken);
+        _mumbleWorker.StandardInput.Close();
+        Log.Information("started CAN Mumble worker for {Callsign} on {Frequency}", callsign, frequency);
     }
 
     /// <inheritdoc />
     public async Task RemoveBot(string? callsign, CancellationToken? cancellationToken = null)
     {
         cancellationToken?.ThrowIfCancellationRequested();
+        StopMumbleWorker();
         await Task.CompletedTask;
-        Log.Information("CAN Mumble audio cleanup is managed by the CAN ATIS service: {Callsign}", callsign);
     }
 
     private void HeartbeatTimerCallback(object? state)
@@ -136,6 +173,37 @@ public class VoiceServerConnection : IVoiceServerConnection
         // FSD 登录与 Mumble 登录均由 can-audio/server 处理；保留一个成功标志，
         // 让旧的 ViewModel 生命周期继续工作，真正的语音连接由客户端广播器负责。
         _jwtToken = "CAN_MUMBLE";
+    }
+
+    private void StopMumbleWorker()
+    {
+        if (_mumbleWorker is null)
+            return;
+        try
+        {
+            if (!_mumbleWorker.HasExited)
+                _mumbleWorker.Kill(true);
+            _mumbleWorker.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "could not stop CAN Mumble worker");
+        }
+        finally
+        {
+            _mumbleWorker = null;
+        }
+    }
+
+    private static string WorkerPath() => Path.Combine(AppContext.BaseDirectory, "can_mumble_worker.py");
+
+    private static string PythonPath()
+    {
+        var projectVenv = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..", ".venv", "Scripts", "python.exe"));
+        if (File.Exists(projectVenv))
+            return projectVenv;
+        var bundled = Path.Combine(AppContext.BaseDirectory, "python", "python.exe");
+        return File.Exists(bundled) ? bundled : "python";
     }
 
     private async Task RefreshToken()

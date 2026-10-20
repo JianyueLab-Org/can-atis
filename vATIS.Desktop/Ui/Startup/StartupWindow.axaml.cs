@@ -4,6 +4,9 @@
 // </copyright>
 
 using Avalonia.ReactiveUI;
+using Avalonia.Controls;
+using System;
+using System.IO;
 using Vatsim.Vatis.Ui.ViewModels;
 
 namespace Vatsim.Vatis.Ui.Startup;
@@ -20,6 +23,7 @@ public partial class StartupWindow : ReactiveWindow<StartupWindowViewModel>
     public StartupWindow(StartupWindowViewModel viewModel)
     {
         InitializeComponent();
+        SetWindowsIcon();
         ViewModel = viewModel;
     }
 
@@ -29,5 +33,13 @@ public partial class StartupWindow : ReactiveWindow<StartupWindowViewModel>
     public StartupWindow()
     {
         InitializeComponent();
+        SetWindowsIcon();
+    }
+
+    private void SetWindowsIcon()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Assets", "MainIcon.ico");
+        if (File.Exists(path))
+            Icon = new WindowIcon(path);
     }
 }

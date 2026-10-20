@@ -22,6 +22,26 @@
 
 	<ItemGroup>
 		<AvaloniaResource Include="Assets\**" />
+		<ContentWithTargetPath Include="Assets\MainIcon.ico">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>Assets\MainIcon.ico</TargetPath>
+		</ContentWithTargetPath>
+		<ContentWithTargetPath Include="can_mumble_worker.py">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>can_mumble_worker.py</TargetPath>
+		</ContentWithTargetPath>
+		<ContentWithTargetPath Include="mumblecompat.py">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>mumblecompat.py</TargetPath>
+		</ContentWithTargetPath>
+		<ContentWithTargetPath Include="requirements-mumble.txt">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>requirements-mumble.txt</TargetPath>
+		</ContentWithTargetPath>
+		<ContentWithTargetPath Include="..\..\atis\opus.dll" Condition="Exists('..\..\atis\opus.dll')">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>opus.dll</TargetPath>
+		</ContentWithTargetPath>
 		<None Include="..\..\atis\airports.json" CopyToOutputDirectory="PreserveNewest" Link="Data\airports.json" />
 	</ItemGroup>
 

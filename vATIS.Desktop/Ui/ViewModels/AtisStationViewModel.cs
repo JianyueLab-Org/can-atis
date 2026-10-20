@@ -2163,6 +2163,7 @@ public class AtisStationViewModel : ReactiveViewModelBase, IDisposable, ISpokenT
                     {
                         var dto = AtisBotUtils.CreateAtisBotDto(voiceAtis.AudioBytes, AtisStation.Frequency,
                             _atisStationAirport.Latitude, _atisStationAirport.Longitude, TransceiverHeightM);
+                        dto.PcmData = voiceAtis.AudioBytes;
 
                         await _voiceServerConnection.AddOrUpdateBot(_networkConnection.Callsign, dto, cancellationToken);
                     }

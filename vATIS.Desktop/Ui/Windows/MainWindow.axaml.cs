@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Reactive.Linq;
 using Avalonia.Controls;
+using Avalonia.Media.Imaging;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.ReactiveUI;
@@ -30,6 +32,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     public MainWindow(MainWindowViewModel viewModel)
     {
         InitializeComponent();
+        SetWindowsIcon();
 
         NotificationManager = new WindowNotificationManager(this) { MaxItems = 4 };
 
@@ -49,6 +52,21 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     public MainWindow()
     {
         InitializeComponent();
+        SetWindowsIcon();
+    }
+
+    private void SetWindowsIcon()
+    {
+        try
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, "Assets", "MainIcon.ico");
+            if (File.Exists(path))
+                Icon = new WindowIcon(path);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "could not set the CAN ATIS window icon");
+        }
     }
 
     /// <summary>

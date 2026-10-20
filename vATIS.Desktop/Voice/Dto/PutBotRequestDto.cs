@@ -27,4 +27,9 @@ public class PutBotRequestDto
     /// Gets or sets the collection of encoded Opus audio data segments.
     /// </summary>
     public List<byte[]>? OpusData { get; set; }
+
+    /// <summary>
+    /// Raw mono 48 kHz PCM used by the local CAN Mumble worker.
+    /// </summary>
+    public byte[]? PcmData { get; set; }
 }
