@@ -1,0 +1,300 @@
+﻿// <copyright file="SurfaceWindNode.cs" company="Justin Shannon">
+// Copyright (c) Justin Shannon. All rights reserved.
+// Licensed under the GPLv3 license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.RegularExpressions;
+using Vatsim.Vatis.Atis.Extensions;
+using Vatsim.Vatis.Weather.Decoder.Entity;
+
+namespace Vatsim.Vatis.Atis.Nodes;
+
+/// <summary>
+/// Represents an ATIS node that provides the surface wind information.
+/// </summary>
+public class SurfaceWindNode : BaseNode<SurfaceWind>
+{
+    /// <inheritdoc/>
+    public override void Parse(DecodedMetar metar)
+    {
+        Parse(metar.SurfaceWind);
+    }
+
+    /// <inheritdoc/>
+    public override string ParseVoiceVariables(SurfaceWind node, string? format)
+    {
+        ArgumentNullException.ThrowIfNull(Station);
+
+        if (format == null)
+            return "";
+
+        var magVarDeg = Station.AtisFormat.SurfaceWind.MagneticVariation.MagneticDegrees;
+
+        var speakLeadingZero = Station.AtisFormat.SurfaceWind.SpeakLeadingZero;
+        var leadingZero = Station.AtisFormat.SurfaceWind.SpeakLeadingZero ? "00" : "";
+
+        var meanDirection = node.MeanDirection?.ActualValue ?? null;
+        var meanSpeed = node.MeanSpeed?.ActualValue ?? null;
+        var speedVariations = node.SpeedVariations?.ActualValue ?? null;
+        var directionVariations = node.DirectionVariations ?? null;
+
+        int? minDirectionVariation = null;
+        if (directionVariations != null)
+        {
+            minDirectionVariation = (int)directionVariations[0].ActualValue;
+        }
+
+        int? maxDirectionVariation = null;
+        if (directionVariations != null)
+        {
+            maxDirectionVariation = (int)directionVariations[1].ActualValue;
+        }
+
+        int? meanSpeedKts = null;
+        if (node.MeanSpeed != null)
+        {
+            meanSpeedKts = SurfaceWind.ToKts(node.MeanSpeed).ToInt32(CultureInfo.InvariantCulture);
+        }
+
+        int? meanSpeedMps = null;
+        if (node.MeanSpeed != null)
+        {
+            meanSpeedMps = SurfaceWind.ToMps(node.MeanSpeed).ToInt32(CultureInfo.InvariantCulture);
+        }
+
+        int? speedVariationKts = null;
+        if (node.SpeedVariations != null)
+        {
+            speedVariationKts = SurfaceWind.ToKts(node.SpeedVariations).ToInt32(CultureInfo.InvariantCulture);
+        }
+
+        int? speedVariationMps = null;
+        if (node.SpeedVariations != null)
+        {
+            speedVariationMps = SurfaceWind.ToMps(node.SpeedVariations).ToInt32(CultureInfo.InvariantCulture);
+        }
+
+        var speakInGroupForm = Station.AtisFormat.SurfaceWind.SpeakWindSpeedGroupFormat;
+        var magVarEnabled = Station.AtisFormat.SurfaceWind.MagneticVariation.Enabled;
+        var meanDirectionMag = (meanDirection ?? 0).ApplyMagVar(magVarEnabled, magVarDeg).ToString("000");
+
+        string? VarDigits(int? value) =>
+            value?.ApplyMagVar(magVarEnabled, magVarDeg).ToString("000");
+
+        string Speed(string key, double? value) =>
+            Render(key, value?.ToString(leadingZero).ToFormat(speakInGroupForm, speakLeadingZero), value?.ToString(leadingZero), true);
+
+        string SpeedInt(string key, int? value) =>
+            Render(key, value?.ToString(leadingZero).ToFormat(speakInGroupForm, speakLeadingZero), value?.ToString(leadingZero), true);
+
+        format = Regex.Replace(format, "{wind_dir}", _ => Render("wind_dir", meanDirectionMag.ToSerialFormat(), meanDirectionMag, true), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, @"{wind_spd(?::#+)?}", _ => Speed("wind_spd", meanSpeed), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, @"{wind_spd\|kt(?::#+)?}", _ => SpeedInt("wind_spd", meanSpeedKts), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, @"{wind_spd\|mps(?::#+)?}", _ => SpeedInt("wind_spd", meanSpeedMps), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, @"{wind_gust(?::#+)?}", _ => Speed("wind_gust", speedVariations), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, @"{wind_gust\|kt(?::#+)?}", _ => SpeedInt("wind_gust", speedVariationKts), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, @"{wind_gust\|mps(?::#+)?}", _ => SpeedInt("wind_gust", speedVariationMps), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, "{wind_vmin}", _ => Render("wind_vmin", VarDigits(minDirectionVariation).ToSerialFormat(), VarDigits(minDirectionVariation), true), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, "{wind_vmax}", _ => Render("wind_vmax", VarDigits(maxDirectionVariation).ToSerialFormat(), VarDigits(maxDirectionVariation), true), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, "{wind_unit}", GetSpokenWindUnit(node.MeanSpeed), RegexOptions.IgnoreCase);
+
+        return format;
+    }
+
+    /// <inheritdoc/>
+    public override string ParseTextVariables(SurfaceWind node, string? format)
+    {
+        ArgumentNullException.ThrowIfNull(Station);
+
+        if (format == null)
+            return "";
+
+        var magVarDeg = Station.AtisFormat.SurfaceWind.MagneticVariation.MagneticDegrees;
+        var meanDirection = node.MeanDirection?.ActualValue ?? null;
+        var meanSpeed = node.MeanSpeed?.ActualValue ?? null;
+        var speedVariations = node.SpeedVariations?.ActualValue ?? null;
+        var directionVariations = node.DirectionVariations ?? null;
+
+        int? minDirectionVariation = null;
+        if (directionVariations != null)
+        {
+            minDirectionVariation = (int)directionVariations[0].ActualValue;
+        }
+
+        int? maxDirectionVariation = null;
+        if (directionVariations != null)
+        {
+            maxDirectionVariation = (int)directionVariations[1].ActualValue;
+        }
+
+        int? meanSpeedKts = null;
+        if (node.MeanSpeed != null)
+        {
+            meanSpeedKts = SurfaceWind.ToKts(node.MeanSpeed).ToInt32(CultureInfo.InvariantCulture);
+        }
+
+        int? meanSpeedMps = null;
+        if (node.MeanSpeed != null)
+        {
+            meanSpeedMps = SurfaceWind.ToMps(node.MeanSpeed).ToInt32(CultureInfo.InvariantCulture);
+        }
+
+        int? speedVariationKts = null;
+        if (node.SpeedVariations != null)
+        {
+            speedVariationKts = SurfaceWind.ToKts(node.SpeedVariations).ToInt32(CultureInfo.InvariantCulture);
+        }
+
+        int? speedVariationMps = null;
+        if (node.SpeedVariations != null)
+        {
+            speedVariationMps = SurfaceWind.ToMps(node.SpeedVariations).ToInt32(CultureInfo.InvariantCulture);
+        }
+
+        var magVarEnabled = Station.AtisFormat.SurfaceWind.MagneticVariation.Enabled;
+        var meanDirectionMag = (meanDirection ?? 0).ApplyMagVar(magVarEnabled, magVarDeg).ToString("000");
+
+        string? VarDigits(int? value) =>
+            value?.ApplyMagVar(magVarEnabled, magVarDeg).ToString("000");
+
+        format = Regex.Replace(format, "{wind_dir}", _ => Render("wind_dir", meanDirectionMag, meanDirectionMag, false), RegexOptions.IgnoreCase);
+        format = ReplaceSpeed(format, "wind_spd", "wind_spd", meanSpeed);
+        format = ReplaceSpeed(format, @"wind_spd\|kt", "wind_spd", meanSpeedKts);
+        format = ReplaceSpeed(format, @"wind_spd\|mps", "wind_spd", meanSpeedMps);
+        format = ReplaceSpeed(format, "wind_gust", "wind_gust", speedVariations);
+        format = ReplaceSpeed(format, @"wind_gust\|kt", "wind_gust", speedVariationKts);
+        format = ReplaceSpeed(format, @"wind_gust\|mps", "wind_gust", speedVariationMps);
+        format = Regex.Replace(format, "{wind_vmin}", _ => Render("wind_vmin", VarDigits(minDirectionVariation), VarDigits(minDirectionVariation), false), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, "{wind_vmax}", _ => Render("wind_vmax", VarDigits(maxDirectionVariation), VarDigits(maxDirectionVariation), false), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, "{wind_unit}", node.SpeedUnit.ToString(), RegexOptions.IgnoreCase);
+        format = Regex.Replace(format, "{wind}", node.RawValue ?? "", RegexOptions.IgnoreCase);
+
+        return format;
+    }
+
+    /// <summary>
+    /// Replaces a speed variable in a text template. The number of '#' characters in an optional suffix
+    /// (e.g. {wind_spd:#}) sets the minimum digits; without a suffix the value is padded to two digits.
+    /// </summary>
+    private string ReplaceSpeed(string format, string variable, string formatKey, double? value)
+    {
+        return Regex.Replace(format, "{" + variable + "(?::(?<digits>#+))?}", match =>
+        {
+            if (value == null)
+                return "";
+
+            var digits = match.Groups["digits"].Success ? match.Groups["digits"].Length : 2;
+            var padded = ((int)value.Value).ToString(new string('0', digits), CultureInfo.InvariantCulture);
+            return Render(formatKey, padded, padded, false);
+        }, RegexOptions.IgnoreCase);
+    }
+
+    private string Render(string key, string? rendered, string? digits, bool voice)
+    {
+        if (string.IsNullOrEmpty(rendered))
+            return string.Empty;
+
+        var format = Station?.AtisFormat.SurfaceWind.VariableFormats.GetValueOrDefault(key);
+        return VariableFormatter.Apply(rendered, digits ?? rendered, voice ? format?.Voice : format?.Text, !voice);
+    }
+
+    private void Parse(SurfaceWind? surfaceWind)
+    {
+        ArgumentNullException.ThrowIfNull(Station);
+
+        if (surfaceWind == null)
+            return;
+
+        List<string> spokenAtis = [];
+        List<string> textAtis = [];
+
+        if (surfaceWind.SpeedVariations != null)
+        {
+            // VRB10G20KT
+            if (surfaceWind.VariableDirection)
+            {
+                var voice = ParseVoiceVariables(surfaceWind, Station.AtisFormat.SurfaceWind.VariableGust.Template.Voice);
+                spokenAtis.Add(voice);
+
+                var text = ParseTextVariables(surfaceWind, Station.AtisFormat.SurfaceWind.VariableGust.Template.Text);
+                textAtis.Add(text);
+            }
+
+            // 25010G16KT
+            else
+            {
+                var voice = ParseVoiceVariables(surfaceWind, Station.AtisFormat.SurfaceWind.StandardGust.Template.Voice);
+                spokenAtis.Add(voice);
+
+                var text = ParseTextVariables(surfaceWind, Station.AtisFormat.SurfaceWind.StandardGust.Template.Text);
+                textAtis.Add(text);
+            }
+        }
+
+        // 25010KT
+        else
+        {
+            if (surfaceWind.MeanDirection != null)
+            {
+                // calm wind
+                if ((surfaceWind.MeanDirection.ActualValue == 0 && surfaceWind.MeanSpeed?.ActualValue == 0) ||
+                    surfaceWind.MeanSpeed?.ActualValue <= Station.AtisFormat.SurfaceWind.Calm.CalmWindSpeed)
+                {
+                    var voice = ParseVoiceVariables(surfaceWind, Station.AtisFormat.SurfaceWind.Calm.Template.Voice);
+                    spokenAtis.Add(voice);
+
+                    var text = ParseTextVariables(surfaceWind, Station.AtisFormat.SurfaceWind.Calm.Template.Text);
+                    textAtis.Add(text);
+                }
+                else
+                {
+                    var voice = ParseVoiceVariables(surfaceWind, Station.AtisFormat.SurfaceWind.Standard.Template.Voice);
+                    spokenAtis.Add(voice);
+
+                    var text = ParseTextVariables(surfaceWind, Station.AtisFormat.SurfaceWind.Standard.Template.Text);
+                    textAtis.Add(text);
+                }
+            }
+        }
+
+        // VRB10KT
+        if (surfaceWind.SpeedVariations == null && surfaceWind is { MeanSpeed: not null, VariableDirection: true })
+        {
+            var voice = ParseVoiceVariables(surfaceWind, Station.AtisFormat.SurfaceWind.Variable.Template.Voice);
+            spokenAtis.Add(voice);
+
+            var text = ParseTextVariables(surfaceWind, Station.AtisFormat.SurfaceWind.Variable.Template.Text);
+            textAtis.Add(text);
+        }
+
+        // 250V360
+        if (surfaceWind.DirectionVariations != null)
+        {
+            var voice = ParseVoiceVariables(surfaceWind, Station.AtisFormat.SurfaceWind.VariableDirection.Template.Voice);
+            spokenAtis.Add(voice);
+
+            var text = ParseTextVariables(surfaceWind, Station.AtisFormat.SurfaceWind.VariableDirection.Template.Text);
+            textAtis.Add(text);
+        }
+
+        VoiceAtis = string.Join(", ", spokenAtis).TrimEnd(',').TrimEnd(' ');
+        TextAtis = string.Join(" ", textAtis).TrimEnd(' ');
+    }
+
+    private string GetSpokenWindUnit(Value? unit)
+    {
+        if (unit == null)
+            return "";
+
+        return unit.ActualUnit switch
+        {
+            Value.Unit.KilometerPerHour => unit.ActualValue > 1 ? "kilometers per hour" : "kilometer per hour",
+            Value.Unit.MeterPerSecond => unit.ActualValue > 1 ? "meters per second" : "meter per second",
+            Value.Unit.Knot => unit.ActualValue > 1 ? "knots" : "knot",
+            _ => ""
+        };
+    }
+}

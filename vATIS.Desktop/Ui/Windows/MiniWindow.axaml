@@ -1,0 +1,176 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:Vatsim.Vatis.Ui.ViewModels"
+        xmlns:networking="using:Vatsim.Vatis.Networking"
+        xmlns:converter="using:Vatsim.Vatis.Ui.Converters"
+        xmlns:behaviors="using:Vatsim.Vatis.Ui.Behaviors"
+        xmlns:atis="using:Vatsim.Vatis.Atis"
+        mc:Ignorable="d"
+        x:Name="Window"
+        x:Class="Vatsim.Vatis.Ui.Windows.MiniWindow"
+        PointerPressed="OnPointerPressed"
+        DoubleTapped="OnDoubleTapped"
+        MinHeight="30"
+        MinWidth="90"
+        MaxWidth="400"
+        SizeToContent="WidthAndHeight"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        SystemDecorations="None"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        Topmost="{Binding IsTopMost, DataType=vm:MiniWindowTopMostViewModel,
+        Source={x:Static vm:MiniWindowTopMostViewModel.Instance}}"
+        Title="CAN ATIS">
+    <Window.Resources>
+        <converter:AtisLetterColorConverter x:Key="AtisLetterColorConverter"/>
+        <converter:EnumToBrushConverter x:Key="ConnectionStatusToBrush" Match="Aqua" NoMatch="Tomato"/>
+        <converter:EnumToBoolConverter x:Key="EnumToBoolConverter"/>
+        <DataTemplate x:Key="AtisLetterTemplate">
+            <TextBlock
+                Name="AtisLetter"
+                FontFamily="{StaticResource Monospace}"
+                FontSize="15"
+                FontWeight="Medium"
+                Text="{Binding AtisLetter, DataType=vm:AtisStationViewModel}"
+                Foreground="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource AtisLetterColorConverter}, FallbackValue=Aqua}"
+                Classes.NeedsAck="{Binding IsNewAtis, DataType=vm:AtisStationViewModel}">
+                <ToolTip.Tip>
+                    <TextBlock Text="{Binding AtisStation.TextAtis, DataType=vm:AtisStationViewModel}"
+                               FontFamily="{StaticResource Monospace}" FontSize="14"/>
+                </ToolTip.Tip>
+                <Control.Styles>
+                    <!-- Only a letter that still needs acknowledging is clickable. -->
+                    <Style Selector="TextBlock.NeedsAck">
+                        <Setter Property="Cursor" Value="Hand"/>
+                    </Style>
+                    <Style Selector="ToolTip">
+                        <Setter Property="IsVisible" Value="{Binding AtisStation.TextAtis, DataType=vm:AtisStationViewModel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    </Style>
+                </Control.Styles>
+                <Interaction.Behaviors>
+                    <RoutedEventTriggerBehavior RoutedEvent="{x:Static InputElement.PointerPressedEvent}" SourceInteractive="AtisLetter">
+                        <InvokeCommandAction Command="{Binding AcknowledgeAtisUpdateCommand, DataType=vm:AtisStationViewModel}" PassEventArgsToCommand="True" />
+                    </RoutedEventTriggerBehavior>
+                    <behaviors:BlinkingTextBehavior IsBlinking="{Binding IsNewAtis, DataType=vm:AtisStationViewModel, Mode=TwoWay}" BlinkOffColor="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource ConnectionStatusToBrush}, ConverterParameter={x:Static networking:NetworkConnectionStatus.Connected}}"/>
+                </Interaction.Behaviors>
+            </TextBlock>
+        </DataTemplate>
+    </Window.Resources>
+    <Border x:Name="Root"
+            CornerRadius="5"
+            BorderBrush="Black"
+            BorderThickness="1"
+            Background="#323232"
+            ClipToBounds="True">
+        <Border.ContextMenu>
+            <ContextMenu>
+                <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center" Margin="2,2">
+                    <ToggleButton Theme="{StaticResource ActionToggle}"
+                                  ToolTip.Tip="Toggle Weather Data"
+                                  Command="{Binding ToggleMetarDetails, Source={x:Static vm:MiniWindowTopMostViewModel.Instance}}"
+                                  IsChecked="{Binding ShowMetarDetails, Mode=OneWay, Source={x:Static vm:MiniWindowTopMostViewModel.Instance}}"/>
+                    <ToggleButton Theme="{StaticResource CompassToggle}"
+                                  ToolTip.Tip="Show Magnetic Wind"
+                                  IsVisible="{Binding ShowMetarDetails, Source={x:Static vm:MiniWindowTopMostViewModel.Instance}}"
+                                  Command="{Binding ToggleMagneticWind, Source={x:Static vm:MiniWindowTopMostViewModel.Instance}}"
+                                  IsChecked="{Binding UseMagneticWind, Mode=OneWay, Source={x:Static vm:MiniWindowTopMostViewModel.Instance}}"/>
+                    <ToggleButton Theme="{StaticResource PinButtonSmall}"
+                                  ToolTip.Tip="Keep Window On Top"
+                                  Command="{Binding ToggleIsTopMost, Source={x:Static vm:MiniWindowTopMostViewModel.Instance}}"
+                                  IsChecked="{Binding IsTopMost, Mode=OneWay, Source={x:Static vm:MiniWindowTopMostViewModel.Instance}}"/>
+                    <Button ToolTip.Tip="Restore Main Window" Theme="{StaticResource MiniWindowButtonSmall}" Command="{Binding InvokeMainWindowCommand, DataType=vm:MiniWindowViewModel}" CommandParameter="{Binding ElementName=Window}" />
+                </StackPanel>
+                <Separator IsVisible="{Binding HasAnyStations, DataType=vm:MiniWindowViewModel}" />
+                <ItemsControl ItemsSource="{Binding Stations, DataType=vm:MiniWindowViewModel}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsVisibleOnMiniWindow, DataType=vm:AtisStationViewModel}"
+                                      Content="{Binding TabText, DataType=vm:AtisStationViewModel}"
+                                      Theme="{StaticResource CheckBox}" Margin="10,0,10,0" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Spacing="-5"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+                <!-- Styles -->
+                <ContextMenu.Styles>
+                    <Style Selector="MenuItem">
+                        <Setter Property="Theme" Value="{StaticResource MiniWindow_MenuItem}"/>
+                        <Setter Property="Padding" Value="5,0"/>
+                    </Style>
+                    <Style Selector="Separator">
+                        <Setter Property="Theme" Value="{StaticResource MiniWindow_MenuSeparator}"/>
+                    </Style>
+                    <Style Selector="MenuItem:pointerover /template/ Border#PART_LayoutRoot">
+                        <Setter Property="Background" Value="Transparent"/>
+                    </Style>
+                </ContextMenu.Styles>
+            </ContextMenu>
+        </Border.ContextMenu>
+        <Panel ClipToBounds="True">
+            <ItemsControl ItemsSource="{Binding FilteredStations, DataType=vm:MiniWindowViewModel}" Margin="8,5,8,5" Grid.IsSharedSizeScope="True" Classes.WithGutter="{Binding HasExpiredRecording, DataType=vm:MiniWindowViewModel}" IsVisible="{Binding FilteredStations.Count, DataType=vm:MiniWindowViewModel}" VerticalAlignment="Center">
+                <ItemsControl.Styles>
+                    <!-- Space for the recording-expired dot is only reserved while at least one station shows it. -->
+                    <Style Selector="ItemsControl.WithGutter Grid.StationRow">
+                        <Setter Property="Margin" Value="12,0,0,0"/>
+                    </Style>
+                </ItemsControl.Styles>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Panel>
+                            <!-- The dot sits in the left gutter that is reserved while any station shows it. -->
+                            <Button Command="{Binding VoiceRecordAtisCommand, DataType=vm:AtisStationViewModel}" Padding="3" Margin="-3,3,0,0" Background="Transparent" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Left" VerticalAlignment="Center" IsVisible="{Binding RecordedAtisState, DataType=vm:AtisStationViewModel, Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static atis:RecordedAtisState.Expired}}">
+                                <Button.Template>
+                                    <ControlTemplate>
+                                        <Border Background="Transparent" Padding="{TemplateBinding Padding}" Cursor="Hand">
+                                            <Ellipse Width="7" Height="7" Fill="Red" IsHitTestVisible="False"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                                <ToolTip.Tip>Voice ATIS needs recording. Click to record.</ToolTip.Tip>
+                            </Button>
+                            <Grid Classes="StationRow" ColumnDefinitions="65,10" IsVisible="{Binding !ShowMetarDetails, DataType=vm:MiniWindowTopMostViewModel, Source={x:Static vm:MiniWindowTopMostViewModel.Instance}}">
+                                <TextBlock Grid.Column="0" FontFamily="{StaticResource Monospace}" FontSize="15" FontWeight="Medium" Foreground="White" Text="{Binding TabText, DataType=vm:AtisStationViewModel}" IsHitTestVisible="False" />
+                                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource AtisLetterTemplate}" Grid.Column="1"/>
+                            </Grid>
+                            <Grid Classes="StationRow" IsVisible="{Binding ShowMetarDetails, DataType=vm:MiniWindowTopMostViewModel, Source={x:Static vm:MiniWindowTopMostViewModel.Instance}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="65"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <!-- Auto columns share one width across all station rows so they line up. -->
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="MiniWindowAltimeter"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="MiniWindowWind"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" FontFamily="{StaticResource Monospace}" FontSize="15" FontWeight="Medium" Foreground="White" Text="{Binding TabText, DataType=vm:AtisStationViewModel}" IsHitTestVisible="False" />
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
+                                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource AtisLetterTemplate}" />
+                                    <TextBlock FontFamily="{StaticResource Monospace}" Text="{Binding ObservationTime, DataType=vm:AtisStationViewModel}" Foreground="White" FontSize="15" FontWeight="Medium" IsHitTestVisible="False"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="4" FontFamily="{StaticResource Monospace}" FontSize="15" FontWeight="Medium" Text="{Binding Altimeter, DataType=vm:AtisStationViewModel}" Foreground="White" IsHitTestVisible="False"/>
+                                <TextBlock Grid.Column="6" FontFamily="{StaticResource Monospace}" FontSize="15" FontWeight="Medium" Text="{Binding MiniWindowWind, DataType=vm:AtisStationViewModel}" Foreground="White" IsHitTestVisible="False"/>
+                            </Grid>
+                        </Panel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Foreground="White"
+                       FontSize="20"
+                       Margin="10"
+                       IsHitTestVisible="False"
+                       IsVisible="{Binding StatusLabelVisible, DataType=vm:MiniWindowViewModel, FallbackValue=False}"
+                       Text="{Binding StatusLabel, DataType=vm:MiniWindowViewModel}"/>
+        </Panel>
+    </Border>
+</Window>

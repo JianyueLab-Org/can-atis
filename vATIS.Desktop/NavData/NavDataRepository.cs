@@ -1,0 +1,215 @@
+﻿// <copyright file="NavDataRepository.cs" company="Justin Shannon">
+// Copyright (c) Justin Shannon. All rights reserved.
+// Licensed under the GPLv3 license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Serilog;
+using Vatsim.Vatis.Config;
+using Vatsim.Vatis.Events;
+using Vatsim.Vatis.Events.EventBus;
+using Vatsim.Vatis.Io;
+
+namespace Vatsim.Vatis.NavData;
+
+/// <summary>
+/// Provides functionality to manage and retrieve navigation data, such as airports and navaids.
+/// </summary>
+public class NavDataRepository : INavDataRepository
+{
+    private readonly IDownloader _downloader;
+    private readonly IAppConfigurationProvider _appConfigurationProvider;
+
+    private List<Airport> _airports = [];
+    private List<Navaid> _navaids = [];
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NavDataRepository"/> class.
+    /// </summary>
+    /// <param name="downloader">An instance of <see cref="IDownloader"/> used for downloading data.</param>
+    /// <param name="appConfigurationProvider">An instance of <see cref="IAppConfigurationProvider"/> used for accessing application configurations.</param>
+    public NavDataRepository(IDownloader downloader, IAppConfigurationProvider appConfigurationProvider)
+    {
+        _downloader = downloader;
+        _appConfigurationProvider = appConfigurationProvider;
+    }
+
+    /// <inheritdoc />
+    public async Task CheckForUpdates()
+    {
+        if (string.IsNullOrWhiteSpace(_appConfigurationProvider.NavDataUrl))
+        {
+            Log.Information("Using bundled CAN airport navigation data.");
+            return;
+        }
+
+        try
+        {
+            EventBus.Instance.Publish(new StartupStatusChanged("Checking for new navigation data..."));
+            var localNavDataSerial = await GetLocalNavDataSerial();
+            Log.Information($"Local NavData serial number {localNavDataSerial}");
+            var response = await _downloader.DownloadStringAsync(_appConfigurationProvider.NavDataUrl);
+            {
+                var availableNavData =
+                    JsonSerializer.Deserialize(response, SourceGenerationContext.NewDefault.AvailableNavData);
+                if (availableNavData != null)
+                {
+                    if (File.Exists(PathProvider.AirportsFilePath)
+                        && File.Exists(PathProvider.NavaidsFilePath)
+                        && availableNavData.NavDataSerial == localNavDataSerial)
+                    {
+                        Log.Information("NavData is up to date.");
+                    }
+                    else
+                    {
+                        await DownloadNavData(availableNavData);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error downloading nav data.");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task Initialize()
+    {
+        await Task.WhenAll(LoadNavaidDatabase(), LoadAirportDatabase());
+    }
+
+    /// <inheritdoc />
+    public Airport? GetAirport(string id)
+    {
+        return _airports.FirstOrDefault(x => x.Id == id);
+    }
+
+    /// <inheritdoc />
+    public Navaid? GetNavaid(string id)
+    {
+        return _navaids.FirstOrDefault(x => x.Id == id);
+    }
+
+    private static async Task<string> GetLocalNavDataSerial()
+    {
+        if (!File.Exists(PathProvider.NavDataSerialFilePath))
+        {
+            return "";
+        }
+
+        return JsonSerializer.Deserialize(await File.ReadAllTextAsync(PathProvider.NavDataSerialFilePath),
+            SourceGenerationContext.NewDefault.String) ?? "";
+    }
+
+    private async Task DownloadNavData(AvailableNavData availableNavData)
+    {
+        if (!string.IsNullOrEmpty(availableNavData.AirportDataUrl))
+        {
+            Log.Information($"Downloading airport navdata from {availableNavData.AirportDataUrl}");
+            await DownloadAtomicAsync(availableNavData.AirportDataUrl, PathProvider.AirportsFilePath, "airport");
+        }
+
+        if (!string.IsNullOrEmpty(availableNavData.NavaidDataUrl))
+        {
+            Log.Information($"Downloading navaid navdata from {availableNavData.NavaidDataUrl}");
+            await DownloadAtomicAsync(availableNavData.NavaidDataUrl, PathProvider.NavaidsFilePath, "navaid");
+        }
+
+        await File.WriteAllTextAsync(PathProvider.NavDataSerialFilePath,
+            JsonSerializer.Serialize(availableNavData.NavDataSerial, SourceGenerationContext.NewDefault.String));
+    }
+
+    private async Task DownloadAtomicAsync(string url, string destination, string label)
+    {
+        // Download to a temp file first so a failed download never leaves a missing or truncated data file.
+        var tempPath = destination + ".tmp";
+        try
+        {
+            await _downloader.DownloadFileAsync(url, tempPath,
+                new Progress<int>(percent =>
+                {
+                    EventBus.Instance.Publish(new StartupStatusChanged($"Downloading {label} navdata: {percent}%"));
+                }));
+            File.Move(tempPath, destination, true);
+        }
+        finally
+        {
+            try
+            {
+                File.Delete(tempPath);
+            }
+            catch (IOException)
+            {
+                // Best effort cleanup.
+            }
+        }
+    }
+
+    private async Task LoadAirportDatabase()
+    {
+        if (!File.Exists(PathProvider.AirportsFilePath))
+        {
+            var bundledPath = Path.Combine(AppContext.BaseDirectory, "Data", "airports.json");
+            if (File.Exists(bundledPath))
+            {
+                _airports = await LoadBundledAirports(bundledPath);
+                return;
+            }
+
+            Log.Error("Airport navdata file not found: {Path}", PathProvider.AirportsFilePath);
+            throw new NavDataUnavailableException();
+        }
+
+        _airports = await Task.Run(() =>
+        {
+            var content = File.ReadAllText(PathProvider.AirportsFilePath);
+            return JsonSerializer.Deserialize(content, SourceGenerationContext.NewDefault.ListAirport);
+        }) ?? [];
+    }
+
+    private async Task LoadNavaidDatabase()
+    {
+        if (!File.Exists(PathProvider.NavaidsFilePath))
+        {
+            // CAN ATIS only resolves airport positions. Navaids are optional for this client.
+            _navaids = [];
+            return;
+        }
+
+        _navaids = await Task.Run(() =>
+        {
+            using var source = File.OpenRead(PathProvider.NavaidsFilePath);
+            using StreamReader reader = new(source);
+            return JsonSerializer.Deserialize(reader.ReadToEnd(), SourceGenerationContext.NewDefault.ListNavaid);
+        }) ?? [];
+    }
+
+    private static async Task<List<Airport>> LoadBundledAirports(string path)
+    {
+        await using var stream = File.OpenRead(path);
+        using var document = await JsonDocument.ParseAsync(stream);
+        var airports = new List<Airport>();
+        foreach (var property in document.RootElement.EnumerateObject())
+        {
+            var coordinates = property.Value;
+            if (coordinates.ValueKind != JsonValueKind.Array || coordinates.GetArrayLength() < 2)
+                continue;
+
+            airports.Add(new Airport
+            {
+                Id = property.Name,
+                Name = property.Name,
+                Latitude = coordinates[0].GetDouble(),
+                Longitude = coordinates[1].GetDouble()
+            });
+        }
+
+        return airports;
+    }
+}

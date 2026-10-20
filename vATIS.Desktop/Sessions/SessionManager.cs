@@ -1,0 +1,110 @@
+﻿// <copyright file="SessionManager.cs" company="Justin Shannon">
+// Copyright (c) Justin Shannon. All rights reserved.
+// Licensed under the GPLv3 license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Serilog;
+using Vatsim.Vatis.Events;
+using Vatsim.Vatis.Events.EventBus;
+using Vatsim.Vatis.Profiles;
+using Vatsim.Vatis.Profiles.Models;
+using Vatsim.Vatis.Ui;
+using Vatsim.Vatis.Ui.Profiles;
+using Vatsim.Vatis.Ui.Windows;
+
+namespace Vatsim.Vatis.Sessions;
+
+/// <inheritdoc />
+public class SessionManager : ISessionManager
+{
+    private readonly IWindowFactory _windowFactory;
+    private readonly IProfileRepository _profileRepository;
+    private MainWindow? _mainWindow;
+    private ProfileListDialog? _profileListDialog;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SessionManager"/> class.
+    /// </summary>
+    /// <param name="windowFactory">The window factory to create UI windows.</param>
+    /// <param name="profileRepository">The profile repository to manage profiles.</param>
+    public SessionManager(IWindowFactory windowFactory, IProfileRepository profileRepository)
+    {
+        _windowFactory = windowFactory;
+        _profileRepository = profileRepository;
+    }
+
+    /// <inheritdoc/>
+    public Profile? CurrentProfile { get; private set; }
+
+    /// <inheritdoc/>
+    public void Run()
+    {
+        ShowProfileListDialog();
+    }
+
+    /// <inheritdoc />
+    public async Task StartSession(string profileId)
+    {
+        var profile = await _profileRepository.LoadById(profileId);
+        if (profile == null)
+            return;
+
+        OpenSession(profile);
+    }
+
+    /// <inheritdoc />
+    public void EndSession()
+    {
+        EventBus.Instance.Publish(new SessionEnded());
+        CurrentProfile = null;
+        _mainWindow?.Close();
+        ShowProfileListDialog();
+    }
+
+    /// <inheritdoc />
+    public async Task ChangeProfile(string profileId)
+    {
+        try
+        {
+            var profile = await _profileRepository.LoadById(profileId);
+            if (profile == null)
+                return;
+
+            EndSession();
+            OpenSession(profile);
+        }
+        catch (Exception ex)
+        {
+            ShowProfileListDialog();
+            Log.Error(ex, "ChangeProfile failed");
+        }
+    }
+
+    private void OpenSession(Profile profile)
+    {
+        _profileListDialog?.Close();
+        CurrentProfile = profile;
+        _mainWindow = _windowFactory.CreateMainWindow();
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.MainWindow = _mainWindow;
+        }
+
+        _mainWindow.Show();
+    }
+
+    private void ShowProfileListDialog()
+    {
+        _profileListDialog = _windowFactory.CreateProfileListDialog();
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.MainWindow = _profileListDialog;
+        }
+
+        _profileListDialog.Show();
+    }
+}

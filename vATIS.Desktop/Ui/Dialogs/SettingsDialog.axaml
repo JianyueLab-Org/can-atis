@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:common="using:Vatsim.Vatis.Ui.Common"
+		xmlns:vm="using:Vatsim.Vatis.Ui.ViewModels"
+		xmlns:behaviors="using:Vatsim.Vatis.Ui.Behaviors"
+		mc:Ignorable="d"
+		x:Class="Vatsim.Vatis.Ui.Dialogs.SettingsDialog"
+		x:Name="Window"
+		Width="300"
+		ShowInTaskbar="False"
+		CanResize="False"
+		SystemDecorations="None"
+		SizeToContent="Height"
+		WindowStartupLocation="CenterOwner"
+		Background="Transparent"
+		TransparencyLevelHint="Transparent"
+		Title="User Settings">
+	<Border BorderBrush="#646464" BorderThickness="1" Background="#323232" CornerRadius="5">
+		<StackPanel>
+            <Border BorderBrush="#3A4560" BorderThickness="0,0,0,1" Background="Transparent" PointerPressed="OnPointerPressed">
+                <TextBlock Text="CAN 账号设置" Padding="8" VerticalAlignment="Center" Foreground="#F0F0F0" FontWeight="Medium" />
+			</Border>
+			<StackPanel Spacing="5" Margin="15">
+				<StackPanel>
+                    <TextBlock Text="姓名:"/>
+					<TextBox Name="RealName" Text="{Binding Name, DataType=vm:SettingsDialogViewModel}" Theme="{StaticResource DarkTextBox}"/>
+				</StackPanel>
+				<StackPanel>
+                    <TextBlock Text="CAN ID:"/>
+					<TextBox FontFamily="{StaticResource Monospace}" Name="VatsimId" Text="{Binding UserId, DataType=vm:SettingsDialogViewModel}" Theme="{StaticResource DarkTextBox}">
+						<Interaction.Behaviors>
+							<behaviors:TextBoxNumericOnlyBehavior/>
+						</Interaction.Behaviors>
+					</TextBox>
+				</StackPanel>
+				<StackPanel>
+                    <TextBlock Text="CAN 网络密码:"/>
+					<TextBox Name="VatsimPassword" PasswordChar="•" Text="{Binding Password, DataType=vm:SettingsDialogViewModel}" Theme="{StaticResource DarkTextBox}"/>
+				</StackPanel>
+				<StackPanel>
+                    <TextBlock Text="网络等级:"/>
+					<ComboBox Classes="Dark" HorizontalAlignment="Stretch" ItemsSource="{Binding NetworkRatings, DataType=vm:SettingsDialogViewModel}" DisplayMemberBinding="{Binding Display, DataType=common:ComboBoxItemMeta}" SelectedValueBinding="{Binding Value, DataType=common:ComboBoxItemMeta}" SelectedValue="{Binding SelectedNetworkRating, DataType=vm:SettingsDialogViewModel}"/>
+				</StackPanel>
+				<StackPanel>
+					<CheckBox Theme="{StaticResource CheckBox}" Content="Mute own ATIS update sound" IsChecked="{Binding MuteOwnAtisUpdateSound, DataType=vm:SettingsDialogViewModel}" />
+                    <CheckBox Theme="{StaticResource CheckBox}" Content="Mute shared ATIS update sound" IsChecked="{Binding MuteSharedAtisUpdateSound, DataType=vm:SettingsDialogViewModel}" />
+					<CheckBox Theme="{StaticResource CheckBox}" Content="Automatically fetch ATIS letter" ToolTip.Tip="Fetch the real-world ATIS letter for supported stations automatically after connecting to the network." IsChecked="{Binding AutoFetchAtisLetter, DataType=vm:SettingsDialogViewModel}" IsEnabled="{Binding !AutoFetchDatis, DataType=vm:SettingsDialogViewModel}" />
+					<CheckBox Theme="{StaticResource CheckBox}" Content="Automatically fetch D-ATIS" ToolTip.Tip="Fetch real-world D-ATIS data and populate airport conditions and NOTAMs for stations with a D-ATIS preset." IsChecked="{Binding AutoFetchDatis, DataType=vm:SettingsDialogViewModel}" />
+				</StackPanel>
+				<Grid ColumnDefinitions="1*,5,1*">
+					<Button Theme="{StaticResource Dark}" Grid.Column="0" HorizontalAlignment="Stretch" Content="Save" Command="{Binding SaveSettingsCommand, DataType=vm:SettingsDialogViewModel}" CommandParameter="{Binding ElementName=Window}" IsDefault="True" />
+					<Button Theme="{StaticResource Dark}" Grid.Column="2" HorizontalAlignment="Stretch" Content="Cancel" Click="CancelButtonClicked"/>
+				</Grid>
+			</StackPanel>
+		</StackPanel>
+	</Border>
+</Window>
