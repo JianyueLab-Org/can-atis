@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ATIS for CAN 中文使用文档：自定义缩略语">
+<title>自定义缩略语 · ATIS for CAN</title>
+<link rel="stylesheet" href="../../assets/site.css"></head><body id="top">
+<aside><a class="brand" href="../../index.html">ATIS for CAN</a><div class="tag">Cerulean Aviation Network · 中文文档</div>
+<label for="nav-search">查找章节</label><input id="nav-search" class="search" type="search" placeholder="输入标题关键字…" autocomplete="off">
+<nav aria-label="文档导航"><a class="depth-0" href="../../index.html">欢迎使用</a><a class="depth-0" href="../../system-requirements.html">系统要求</a><a class="depth-0" href="../../installation.html">安装与更新</a><a class="depth-0" href="../index.html">客户端使用指南</a><a class="depth-1" href="../concepts.html">术语与概念</a><a class="depth-1" href="../profiles.html">配置文件</a><a class="depth-1" href="../main-window.html">主窗口</a><a class="depth-1" href="../user-settings.html">用户设置</a><a class="depth-1" href="../mini-window.html">迷你窗口</a><a class="depth-1" href="../atis-station.html">ATIS 席位</a><a class="depth-1" href="../airport-conditions.html">机场运行情况</a><a class="depth-1" href="../notams.html">航行通告</a><a class="depth-1" href="../voice-record-atis.html">人工录制 ATIS</a><a class="depth-1" href="../text-parsing.html">文本解析</a><a class="depth-1" href="../atis-configuration.html">ATIS 配置</a><a class="depth-2" href="general.html">常规设置</a><a class="depth-2" href="presets.html">预设与模板</a><a class="depth-2" href="formatting.html">格式设置</a><a class="depth-3" href="formatting/observation-time.html">观测时间</a><a class="depth-3" href="formatting/wind.html">地面风</a><a class="depth-3" href="formatting/visibility.html">能见度</a><a class="depth-3" href="formatting/runway-visual-range.html">跑道视程</a><a class="depth-3" href="formatting/weather.html">天气现象</a><a class="depth-3" href="formatting/clouds.html">云况</a><a class="depth-3" href="formatting/temperature.html">气温</a><a class="depth-3" href="formatting/dewpoint.html">露点</a><a class="depth-3" href="formatting/altimeter.html">气压与高度表设定</a><a class="depth-3" href="formatting/wind-shear.html">风切变</a><a class="depth-3" href="formatting/runway-condition.html">跑道状况</a><a class="depth-3" href="formatting/remark-wind.html">备注风</a><a class="depth-3" href="formatting/trend-forecast.html">趋势预报</a><a class="depth-3" href="formatting/transition-level.html">过渡高度层</a><a class="depth-3" href="formatting/automatic-observation.html">自动观测</a><a class="depth-3" href="formatting/notams.html">通告格式</a><a class="depth-3" href="formatting/closing-statement.html">结束语</a><a class="depth-2" href="contractions.html" aria-current="page">自定义缩略语</a><a class="depth-3" href="default-contractions.html">默认缩略语表</a><a class="depth-2" href="sandbox.html">沙盒测试</a><a class="depth-2" href="voice-packs.html">WAV 语音包</a><a class="depth-1" href="../automatic-profile-updates.html">配置文件自动更新</a><a class="depth-1" href="../websockets.html">WebSocket API</a><a class="depth-1" href="../local-development.html">本地开发</a><a class="depth-0" href="../../getting-help.html">获取帮助</a><a class="depth-0" href="../../faq.html">常见问题</a><a class="depth-0" href="../../privacy-policy.html">隐私与数据说明</a></nav></aside>
+<main><div class="eyebrow">CAN 用户指南 / 自定义缩略语</div><article>
+<details class="toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_2">新建</a></li>
+<li><a href="#_3">编辑与删除</a></li>
+<li><a href="#_4">使用与预览</a></li>
+<li><a href="#can">CAN 默认词表状态</a></li>
+</ul>
+</div>
+</details><h1 id="_1">自定义缩略语</h1>
+<p><strong>Contractions</strong> 标签页维护缩写与完整词句的映射，可用于航空缩略语和修正发音。席位自定义项优先于服务提供的<a href="default-contractions.html">默认缩略语</a>。</p>
+<h2 id="_2">新建</h2>
+<p>点击 <strong>New</strong> 并填写：</p>
+<ul>
+<li><strong>Variable</strong>：变量名，多词名称自动转换为空格改下划线等变量形式。</li>
+<li><strong>Text</strong>：文字 ATIS 中显示的内容。</li>
+<li><strong>Voice</strong>：语音引擎实际朗读的文本。</li>
+<li><strong>Add to all ATIS stations in this profile</strong>：将该项加入当前配置的所有席位，否则只加到选中席位。</li>
+</ul>
+<p>例如变量 RNAV 的文字保持 RNAV，语音设为 R NAV。</p>
+<h2 id="_3">编辑与删除</h2>
+<p>双击表格文字进入编辑，Enter 提交。选中行后点击 Delete 删除，需要恢复时重新添加。</p>
+<h2 id="_4">使用与预览</h2>
+<p>输入 <code>@</code> 后接变量名会显示自动补全菜单。编辑器中的点状下划线标记实际读法与显示不同的内容，悬停查看语音替换结果。数字、跑道等<a href="../text-parsing.html">语音标记</a>也使用相同预览。</p>
+<h2 id="can">CAN 默认词表状态</h2>
+<p>当前默认词表由配置的语音列表地址旁的 <code>contractions</code> 接口加载。获取失败时，参考词表不等于本地已加载；需要保证输出时，可将本单位常用项目明确加入席位配置。</p><h2 id="reference-images">操作截图参考</h2><p>以下为上游原版截图，保留英文标签。用于定位操作；品牌、登录字段与网络行为以本页 CAN 说明为准。</p><figure><img loading="lazy" src="../../assets/images/Contractions.png" alt="自定义缩略语：原版界面操作参考 Contractions.png"><figcaption>原版界面参考 · Contractions.png</figcaption></figure><figure><img loading="lazy" src="../../assets/images/NewContractionDialog.png" alt="自定义缩略语：原版界面操作参考 NewContractionDialog.png"><figcaption>原版界面参考 · NewContractionDialog.png</figcaption></figure>
+<div class="pager"><a href="formatting/closing-statement.html">上一页：结束语</a><a href="default-contractions.html">下一页：默认缩略语表</a></div></article>
+<footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/client/atis-configuration/contractions.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
+依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>
+<script>document.getElementById('nav-search').addEventListener('input',function(){const q=this.value.trim().toLocaleLowerCase();document.querySelectorAll('nav a').forEach(a=>a.hidden=!a.textContent.toLocaleLowerCase().includes(q));});</script>
+</body></html>

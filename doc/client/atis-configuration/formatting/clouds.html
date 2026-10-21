@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ATIS for CAN 中文使用文档：云况">
+<title>云况 · ATIS for CAN</title>
+<link rel="stylesheet" href="../../../assets/site.css"></head><body id="top">
+<aside><a class="brand" href="../../../index.html">ATIS for CAN</a><div class="tag">Cerulean Aviation Network · 中文文档</div>
+<label for="nav-search">查找章节</label><input id="nav-search" class="search" type="search" placeholder="输入标题关键字…" autocomplete="off">
+<nav aria-label="文档导航"><a class="depth-0" href="../../../index.html">欢迎使用</a><a class="depth-0" href="../../../system-requirements.html">系统要求</a><a class="depth-0" href="../../../installation.html">安装与更新</a><a class="depth-0" href="../../index.html">客户端使用指南</a><a class="depth-1" href="../../concepts.html">术语与概念</a><a class="depth-1" href="../../profiles.html">配置文件</a><a class="depth-1" href="../../main-window.html">主窗口</a><a class="depth-1" href="../../user-settings.html">用户设置</a><a class="depth-1" href="../../mini-window.html">迷你窗口</a><a class="depth-1" href="../../atis-station.html">ATIS 席位</a><a class="depth-1" href="../../airport-conditions.html">机场运行情况</a><a class="depth-1" href="../../notams.html">航行通告</a><a class="depth-1" href="../../voice-record-atis.html">人工录制 ATIS</a><a class="depth-1" href="../../text-parsing.html">文本解析</a><a class="depth-1" href="../../atis-configuration.html">ATIS 配置</a><a class="depth-2" href="../general.html">常规设置</a><a class="depth-2" href="../presets.html">预设与模板</a><a class="depth-2" href="../formatting.html">格式设置</a><a class="depth-3" href="observation-time.html">观测时间</a><a class="depth-3" href="wind.html">地面风</a><a class="depth-3" href="visibility.html">能见度</a><a class="depth-3" href="runway-visual-range.html">跑道视程</a><a class="depth-3" href="weather.html">天气现象</a><a class="depth-3" href="clouds.html" aria-current="page">云况</a><a class="depth-3" href="temperature.html">气温</a><a class="depth-3" href="dewpoint.html">露点</a><a class="depth-3" href="altimeter.html">气压与高度表设定</a><a class="depth-3" href="wind-shear.html">风切变</a><a class="depth-3" href="runway-condition.html">跑道状况</a><a class="depth-3" href="remark-wind.html">备注风</a><a class="depth-3" href="trend-forecast.html">趋势预报</a><a class="depth-3" href="transition-level.html">过渡高度层</a><a class="depth-3" href="automatic-observation.html">自动观测</a><a class="depth-3" href="notams.html">通告格式</a><a class="depth-3" href="closing-statement.html">结束语</a><a class="depth-2" href="../contractions.html">自定义缩略语</a><a class="depth-3" href="../default-contractions.html">默认缩略语表</a><a class="depth-2" href="../sandbox.html">沙盒测试</a><a class="depth-2" href="../voice-packs.html">WAV 语音包</a><a class="depth-1" href="../../automatic-profile-updates.html">配置文件自动更新</a><a class="depth-1" href="../../websockets.html">WebSocket API</a><a class="depth-1" href="../../local-development.html">本地开发</a><a class="depth-0" href="../../../getting-help.html">获取帮助</a><a class="depth-0" href="../../../faq.html">常见问题</a><a class="depth-0" href="../../../privacy-policy.html">隐私与数据说明</a></nav></aside>
+<main><div class="eyebrow">CAN 用户指南 / 云况</div><article>
+<details class="toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#ceiling">云底高（Ceiling）</a></li>
+<li><a href="#_2">高度与未知云层</a></li>
+<li><a href="#cloud-types">Cloud Types</a></li>
+<li><a href="#_3">对流云</a></li>
+<li><a href="#variable-format">Variable Format</a></li>
+</ul>
+</div>
+</details><h1 id="_1">云况</h1>
+<p>预设使用 <code>[CLOUDS]</code>，内部 <code>{clouds}</code> 表示云组，例如 <code>FEW050 SCT100</code>。</p>
+<h2 id="ceiling">云底高（Ceiling）</h2>
+<p>在选定云量类型中，最低且有已报告高度的云层作为 ceiling。可选 SCT、BKN、OVC，默认 BKN 和 OVC。</p>
+<ul>
+<li>语音默认在该云层前加 CEILING，可关闭。</li>
+<li>文字可选择添加前缀，默认不启用，启用后的默认前缀为 CIG，例如 <code>CIG BKN014</code>。</li>
+</ul>
+<h2 id="_2">高度与未知云层</h2>
+<ul>
+<li><strong>Convert cloud layer altitude to metric</strong>：文字、语音高度均转换为米。</li>
+<li>文字云高选项可将编码式百英尺值展开，例如 FEW010 显示 FEW1000；以沙盒实际输出核对结果。</li>
+<li><strong>Undetermined height (///)</strong>：分别设置云层和垂直能见度高度未知时的文字、语音，用于替换 <code>{altitude}</code>。</li>
+<li><strong>UND 行</strong>：用于 <code>FEW///</code>、<code>BKN///CB</code> 等高度未报云层，<code>{amount}</code> 插入 FEW / BKN 云量。</li>
+</ul>
+<h2 id="cloud-types">Cloud Types</h2>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{altitude}</code></td>
+<td>云层高度；文字默认补齐 3 位</td>
+</tr>
+<tr>
+<td><code>{altitude:N}</code></td>
+<td>文字最少 N 位，例如 300 英尺对应 <code>{altitude:2}</code> 为 03</td>
+</tr>
+<tr>
+<td><code>{convective}</code></td>
+<td>CB / TCU 等对流云描述</td>
+</tr>
+<tr>
+<td><code>{amount}</code></td>
+<td>仅 UND 行中的云量</td>
+</tr>
+<tr>
+<td><code>{feet}</code></td>
+<td>已知且未转米时输出 feet；高度未知或转米时为空</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">对流云</h2>
+<p><strong>Convective Cloud Types</strong> 分别设置 CB、TCU 的语音和文字，文字默认保留报码。</p>
+<p>非 FAA 席位的 <strong>Automatic CB Detection</strong> 处理 <code>//////CB</code>：雷达探测到积雨云但没有云量高度。默认文字 <code>//////CB</code>，语音 <code>RADAR DETECTED C-B CLOUDS</code>。</p>
+<h2 id="variable-format">Variable Format</h2>
+<p>为高度分别设置文字和语音的 Default / Digits / Serial / Group 及后缀。转米后，语音的 meters 仍添加在数值后。</p><h2 id="reference-images">操作截图参考</h2><p>以下为上游原版截图，保留英文标签。用于定位操作；品牌、登录字段与网络行为以本页 CAN 说明为准。</p><figure><img loading="lazy" src="../../../assets/images/Formatting_Clouds.png" alt="云况：原版界面操作参考 Formatting_Clouds.png"><figcaption>原版界面参考 · Formatting_Clouds.png</figcaption></figure><figure><img loading="lazy" src="../../../assets/images/Formatting_Clouds_Types.png" alt="云况：原版界面操作参考 Formatting_Clouds_Types.png"><figcaption>原版界面参考 · Formatting_Clouds_Types.png</figcaption></figure><figure><img loading="lazy" src="../../../assets/images/Formatting_Clouds_ConvectiveTypes.png" alt="云况：原版界面操作参考 Formatting_Clouds_ConvectiveTypes.png"><figcaption>原版界面参考 · Formatting_Clouds_ConvectiveTypes.png</figcaption></figure><figure><img loading="lazy" src="../../../assets/images/Formatting_Clouds_VariableFormat.png" alt="云况：原版界面操作参考 Formatting_Clouds_VariableFormat.png"><figcaption>原版界面参考 · Formatting_Clouds_VariableFormat.png</figcaption></figure>
+<div class="pager"><a href="weather.html">上一页：天气现象</a><a href="temperature.html">下一页：气温</a></div></article>
+<footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/client/atis-configuration/formatting/clouds.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
+依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>
+<script>document.getElementById('nav-search').addEventListener('input',function(){const q=this.value.trim().toLocaleLowerCase();document.querySelectorAll('nav a').forEach(a=>a.hidden=!a.textContent.toLocaleLowerCase().includes(q));});</script>
+</body></html>

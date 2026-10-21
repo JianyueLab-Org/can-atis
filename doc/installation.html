@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ATIS for CAN 中文使用文档：安装与更新">
+<title>安装与更新 · ATIS for CAN</title>
+<link rel="stylesheet" href="assets/site.css"></head><body id="top">
+<aside><a class="brand" href="index.html">ATIS for CAN</a><div class="tag">Cerulean Aviation Network · 中文文档</div>
+<label for="nav-search">查找章节</label><input id="nav-search" class="search" type="search" placeholder="输入标题关键字…" autocomplete="off">
+<nav aria-label="文档导航"><a class="depth-0" href="index.html">欢迎使用</a><a class="depth-0" href="system-requirements.html">系统要求</a><a class="depth-0" href="installation.html" aria-current="page">安装与更新</a><a class="depth-0" href="client/index.html">客户端使用指南</a><a class="depth-1" href="client/concepts.html">术语与概念</a><a class="depth-1" href="client/profiles.html">配置文件</a><a class="depth-1" href="client/main-window.html">主窗口</a><a class="depth-1" href="client/user-settings.html">用户设置</a><a class="depth-1" href="client/mini-window.html">迷你窗口</a><a class="depth-1" href="client/atis-station.html">ATIS 席位</a><a class="depth-1" href="client/airport-conditions.html">机场运行情况</a><a class="depth-1" href="client/notams.html">航行通告</a><a class="depth-1" href="client/voice-record-atis.html">人工录制 ATIS</a><a class="depth-1" href="client/text-parsing.html">文本解析</a><a class="depth-1" href="client/atis-configuration.html">ATIS 配置</a><a class="depth-2" href="client/atis-configuration/general.html">常规设置</a><a class="depth-2" href="client/atis-configuration/presets.html">预设与模板</a><a class="depth-2" href="client/atis-configuration/formatting.html">格式设置</a><a class="depth-3" href="client/atis-configuration/formatting/observation-time.html">观测时间</a><a class="depth-3" href="client/atis-configuration/formatting/wind.html">地面风</a><a class="depth-3" href="client/atis-configuration/formatting/visibility.html">能见度</a><a class="depth-3" href="client/atis-configuration/formatting/runway-visual-range.html">跑道视程</a><a class="depth-3" href="client/atis-configuration/formatting/weather.html">天气现象</a><a class="depth-3" href="client/atis-configuration/formatting/clouds.html">云况</a><a class="depth-3" href="client/atis-configuration/formatting/temperature.html">气温</a><a class="depth-3" href="client/atis-configuration/formatting/dewpoint.html">露点</a><a class="depth-3" href="client/atis-configuration/formatting/altimeter.html">气压与高度表设定</a><a class="depth-3" href="client/atis-configuration/formatting/wind-shear.html">风切变</a><a class="depth-3" href="client/atis-configuration/formatting/runway-condition.html">跑道状况</a><a class="depth-3" href="client/atis-configuration/formatting/remark-wind.html">备注风</a><a class="depth-3" href="client/atis-configuration/formatting/trend-forecast.html">趋势预报</a><a class="depth-3" href="client/atis-configuration/formatting/transition-level.html">过渡高度层</a><a class="depth-3" href="client/atis-configuration/formatting/automatic-observation.html">自动观测</a><a class="depth-3" href="client/atis-configuration/formatting/notams.html">通告格式</a><a class="depth-3" href="client/atis-configuration/formatting/closing-statement.html">结束语</a><a class="depth-2" href="client/atis-configuration/contractions.html">自定义缩略语</a><a class="depth-3" href="client/atis-configuration/default-contractions.html">默认缩略语表</a><a class="depth-2" href="client/atis-configuration/sandbox.html">沙盒测试</a><a class="depth-2" href="client/atis-configuration/voice-packs.html">WAV 语音包</a><a class="depth-1" href="client/automatic-profile-updates.html">配置文件自动更新</a><a class="depth-1" href="client/websockets.html">WebSocket API</a><a class="depth-1" href="client/local-development.html">本地开发</a><a class="depth-0" href="getting-help.html">获取帮助</a><a class="depth-0" href="faq.html">常见问题</a><a class="depth-0" href="privacy-policy.html">隐私与数据说明</a></nav></aside>
+<main><div class="eyebrow">CAN 用户指南 / 安装与更新</div><article>
+<details class="toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_2">获取客户端</a></li>
+<li><a href="#windows">Windows 安装</a><ul>
+<li><a href="#_3">压缩包版本</a></li>
+<li><a href="#_4">语音运行环境</a></li>
+</ul>
+</li>
+<li><a href="#_5">首次运行</a></li>
+<li><a href="#_6">数据目录</a></li>
+<li><a href="#_7">更新客户端</a></li>
+<li><a href="#_8">其他系统</a></li>
+</ul>
+</div>
+</details><h1 id="_1">安装与更新</h1>
+<h2 id="_2">获取客户端</h2>
+<p>从 <a href="https://ceruleanavi.net/">CAN 网站</a>或 CAN 管理员公布的发布渠道获取 <strong>ATIS for CAN</strong>。请确认程序名为 <code>atis-for-can.exe</code>。原版 vATIS 的下载按钮安装的是原版客户端，不是 CAN 版。</p>
+<h2 id="windows">Windows 安装</h2>
+<h3 id="_3">压缩包版本</h3>
+<ol>
+<li>下载适用于 Windows x64 的完整发布包。</li>
+<li>将压缩包<strong>全部解压</strong>到有写入权限的目录。</li>
+<li>保留 DLL、Python worker、数据文件和其他随包组件的目录结构。</li>
+<li>双击 <code>atis-for-can.exe</code>。需要时可自行创建桌面快捷方式。</li>
+</ol>
+<p>当前仓库提供的是构建与发布流程，没有可据此确认的固定安装器路径。因此安装目录可以由用户选择，不沿用原版“必须安装在 org.vatsim.vatis”这一说明。</p>
+<h3 id="_4">语音运行环境</h3>
+<p>完整发布包应由维护者配置好 <code>NativeAudio.dll</code>、Python、Mumble 依赖、<code>mumblecompat.py</code>、<code>can_mumble_worker.py</code> 和 Opus 动态库。缺少组件时，窗口可能仍能打开，但不能据此判断录音、试听或网络播音可用。</p>
+<p>源码运行和依赖安装见<a href="client/local-development.html">本地开发</a>。原版同款在线 TTS 的公共 CAN 服务目前尚未部署，安装客户端不会自动获得原版语音模型。</p>
+<h2 id="_5">首次运行</h2>
+<ol>
+<li>打开<a href="client/user-settings.html">用户设置</a>，填写自己的 CAN 资料。</li>
+<li>导入管制单位提供的配置，或<a href="client/profiles.html">创建配置文件</a>。</li>
+<li>选择机场席位，核对频率、ATIS 类型和字母范围。</li>
+<li>选择录音、WAV 语音包或已经配置好的 TTS 服务。</li>
+<li>在<a href="client/atis-configuration/sandbox.html">沙盒</a>核对文字和音频，然后上线。</li>
+</ol>
+<h2 id="_6">数据目录</h2>
+<p>Windows 用户数据位于：</p>
+<pre><code class="language-text">%LOCALAPPDATA%\ceruleanavi.atis-for-can
+</code></pre>
+<p>其中包含 <code>AppConfig.json</code>、<code>Profiles</code>、<code>VoicePacks</code> 和 <code>Logs</code> 等内容。程序文件目录与用户数据目录不是同一概念。不要把自己的 <code>AppConfig.json</code> 放入公共发布包。</p>
+<h2 id="_7">更新客户端</h2>
+<p>源码保留了自动更新机制，但它只在兼容的安装包和更新源有效时工作。当前 CAN 更新源的服务端格式尚需与 Velopack 配套验证，因此不能保证每种包都会自动更新。</p>
+<p>压缩包用户可先退出程序、备份数据目录，再按照发布说明替换完整程序目录。<strong>客户端更新</strong>与<a href="client/automatic-profile-updates.html">配置文件自动更新</a>是不同机制。</p>
+<h2 id="_8">其他系统</h2>
+<p>只有 CAN 正式发布对应安装包后，才按该包说明安装 macOS 或 Linux 版本。不要将原版的 <code>.app</code>、AppImage 下载地址当作 CAN 发行版。</p>
+<div class="pager"><a href="system-requirements.html">上一页：系统要求</a><a href="client/index.html">下一页：客户端使用指南</a></div></article>
+<footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/installation.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
+依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>
+<script>document.getElementById('nav-search').addEventListener('input',function(){const q=this.value.trim().toLocaleLowerCase();document.querySelectorAll('nav a').forEach(a=>a.hidden=!a.textContent.toLocaleLowerCase().includes(q));});</script>
+</body></html>

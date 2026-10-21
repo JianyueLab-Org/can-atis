@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ATIS for CAN 中文使用文档：WAV 语音包">
+<title>WAV 语音包 · ATIS for CAN</title>
+<link rel="stylesheet" href="../../assets/site.css"></head><body id="top">
+<aside><a class="brand" href="../../index.html">ATIS for CAN</a><div class="tag">Cerulean Aviation Network · 中文文档</div>
+<label for="nav-search">查找章节</label><input id="nav-search" class="search" type="search" placeholder="输入标题关键字…" autocomplete="off">
+<nav aria-label="文档导航"><a class="depth-0" href="../../index.html">欢迎使用</a><a class="depth-0" href="../../system-requirements.html">系统要求</a><a class="depth-0" href="../../installation.html">安装与更新</a><a class="depth-0" href="../index.html">客户端使用指南</a><a class="depth-1" href="../concepts.html">术语与概念</a><a class="depth-1" href="../profiles.html">配置文件</a><a class="depth-1" href="../main-window.html">主窗口</a><a class="depth-1" href="../user-settings.html">用户设置</a><a class="depth-1" href="../mini-window.html">迷你窗口</a><a class="depth-1" href="../atis-station.html">ATIS 席位</a><a class="depth-1" href="../airport-conditions.html">机场运行情况</a><a class="depth-1" href="../notams.html">航行通告</a><a class="depth-1" href="../voice-record-atis.html">人工录制 ATIS</a><a class="depth-1" href="../text-parsing.html">文本解析</a><a class="depth-1" href="../atis-configuration.html">ATIS 配置</a><a class="depth-2" href="general.html">常规设置</a><a class="depth-2" href="presets.html">预设与模板</a><a class="depth-2" href="formatting.html">格式设置</a><a class="depth-3" href="formatting/observation-time.html">观测时间</a><a class="depth-3" href="formatting/wind.html">地面风</a><a class="depth-3" href="formatting/visibility.html">能见度</a><a class="depth-3" href="formatting/runway-visual-range.html">跑道视程</a><a class="depth-3" href="formatting/weather.html">天气现象</a><a class="depth-3" href="formatting/clouds.html">云况</a><a class="depth-3" href="formatting/temperature.html">气温</a><a class="depth-3" href="formatting/dewpoint.html">露点</a><a class="depth-3" href="formatting/altimeter.html">气压与高度表设定</a><a class="depth-3" href="formatting/wind-shear.html">风切变</a><a class="depth-3" href="formatting/runway-condition.html">跑道状况</a><a class="depth-3" href="formatting/remark-wind.html">备注风</a><a class="depth-3" href="formatting/trend-forecast.html">趋势预报</a><a class="depth-3" href="formatting/transition-level.html">过渡高度层</a><a class="depth-3" href="formatting/automatic-observation.html">自动观测</a><a class="depth-3" href="formatting/notams.html">通告格式</a><a class="depth-3" href="formatting/closing-statement.html">结束语</a><a class="depth-2" href="contractions.html">自定义缩略语</a><a class="depth-3" href="default-contractions.html">默认缩略语表</a><a class="depth-2" href="sandbox.html">沙盒测试</a><a class="depth-2" href="voice-packs.html" aria-current="page">WAV 语音包</a><a class="depth-1" href="../automatic-profile-updates.html">配置文件自动更新</a><a class="depth-1" href="../websockets.html">WebSocket API</a><a class="depth-1" href="../local-development.html">本地开发</a><a class="depth-0" href="../../getting-help.html">获取帮助</a><a class="depth-0" href="../../faq.html">常见问题</a><a class="depth-0" href="../../privacy-policy.html">隐私与数据说明</a></nav></aside>
+<main><div class="eyebrow">CAN 用户指南 / WAV 语音包</div><article>
+<details class="toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_1">为席位选择语音包</a></li>
+<li><a href="#_2">管理语音包</a></li>
+<li><a href="#_3">匹配规则</a></li>
+<li><a href="#_4">文件结构</a></li>
+<li><a href="#_5">旧格式导入</a></li>
+<li><a href="#_6">分享与自动更新</a></li>
+</ul>
+</div>
+</details><h1 id="wav">WAV 语音包</h1>
+<p>语音包使用预录 WAV 片段拼接 ATIS。程序将准备好的语音文本与片段表匹配，按词或短语连接音频，不依赖在线 TTS 模型。</p>
+<h2 id="_1">为席位选择语音包</h2>
+<p>在 <strong>ATIS Configuration → General</strong> 选择 <strong>WAV Voice Pack</strong>，从列表选择语音包并点击 Apply 或 Save &amp; Close。每个席位独立选择，也可共用同一个包。缺失原包时需重新导入或选择其他包。</p>
+<p>变更语音方式可能断开在线席位，之后需重新检查并上线。缺少词语时不会生成不完整音频，而是列出缺失项。</p>
+<h2 id="_2">管理语音包</h2>
+<p>点击配置窗口底部 <strong>Manage Voice Packs</strong>：</p>
+<ul>
+<li><strong>Import voice pack…</strong>：选择含 <code>manifest.json</code> 和 WAV 的文件夹。文件复制到 CAN 数据目录，之后无需保留导入源目录。完全相同的包会复用而非重复导入。</li>
+<li><strong>Rename</strong>：更改显示名。</li>
+<li><strong>Open folder</strong>：打开文件目录。</li>
+<li><strong>Delete</strong>：删除包和音频，若有席位使用会提示数量；这些席位之后需重新选包。</li>
+<li><strong>Clips</strong>：查看词句与文件映射；Filter 筛选，编辑后 Save manifest 保存。</li>
+<li><strong>Add clips… / Remove</strong>：添加 WAV 或移除映射。</li>
+<li><strong>Play</strong>：试听片段。</li>
+</ul>
+<h2 id="_3">匹配规则</h2>
+<p>按位置进行不区分大小写的最长短语匹配，因此可以同时提供 ONE、ALPHA 和 TRANSITION LEVEL 等多词短语。</p>
+<p>如果文本中的短语后接逗号且包中存在 <code>INFORMATION,</code> 条目，优先用该片段表现句末语调；否则用普通片段加标点停顿。</p>
+<p>支持 8 / 16 / 24 / 32 位整数 PCM WAV、任意采样率、单声道或多声道，生成时统一转为 48 kHz 单声道。</p>
+<h2 id="_4">文件结构</h2>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;CAN ATIS Pack&quot;,
+  &quot;gapMs&quot;: 60,
+  &quot;pauseMs&quot;: { &quot;,&quot;: 250, &quot;.&quot;: 500, &quot;:&quot;: 250, &quot;!&quot;: 500, &quot;?&quot;: 500 },
+  &quot;clips&quot;: {
+    &quot;ZERO&quot;: &quot;numbers/zero.wav&quot;,
+    &quot;ONE&quot;: &quot;numbers/one.wav&quot;,
+    &quot;ALPHA&quot;: &quot;letters/alpha.wav&quot;,
+    &quot;INFORMATION&quot;: &quot;information.wav&quot;,
+    &quot;INFORMATION,&quot;: &quot;information_comma.wav&quot;,
+    &quot;TRANSITION LEVEL&quot;: &quot;transition_level.wav&quot;
+  }
+}
+</code></pre>
+<p><code>name</code> 为显示名，<code>gapMs</code> 为词间停顿（默认 60 毫秒），<code>pauseMs</code> 为标点停顿，<code>clips</code> 是词句到相对路径的映射。也可在管理窗口编辑，无需手写 JSON。</p>
+<h2 id="_5">旧格式导入</h2>
+<p>支持 <code>ATIS.txt</code> 中 <code>RECORD:ALFA:alfa.wav</code> 等旧格式。导入时转换为 manifest，原目录不修改；导入后显示跳过、重复条目等摘要。</p>
+<h2 id="_6">分享与自动更新</h2>
+<p>导出使用语音包的配置或单个席位时，程序生成只包含所需片段的 ZIP。接收者导入后自动加入语音库，已存在的包复用。远程更新配置会保留本地语音包选择。</p>
+<p>WAV 包可以提供一致的固定播报风格，但它是词句拼接，不是从原版客户端导出的 TTS 模型；自由文本超出词表时需补录。</p><h2 id="reference-images">操作截图参考</h2><p>以下为上游原版截图，保留英文标签。用于定位操作；品牌、登录字段与网络行为以本页 CAN 说明为准。</p><figure><img loading="lazy" src="../../assets/images/AtisConfiguration_WavVoicePack.png" alt="WAV 语音包：原版界面操作参考 AtisConfiguration_WavVoicePack.png"><figcaption>原版界面参考 · AtisConfiguration_WavVoicePack.png</figcaption></figure><figure><img loading="lazy" src="../../assets/images/VoicePacks.png" alt="WAV 语音包：原版界面操作参考 VoicePacks.png"><figcaption>原版界面参考 · VoicePacks.png</figcaption></figure>
+<div class="pager"><a href="sandbox.html">上一页：沙盒测试</a><a href="../automatic-profile-updates.html">下一页：配置文件自动更新</a></div></article>
+<footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/client/atis-configuration/voice-packs.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
+依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>
+<script>document.getElementById('nav-search').addEventListener('input',function(){const q=this.value.trim().toLocaleLowerCase();document.querySelectorAll('nav a').forEach(a=>a.hidden=!a.textContent.toLocaleLowerCase().includes(q));});</script>
+</body></html>

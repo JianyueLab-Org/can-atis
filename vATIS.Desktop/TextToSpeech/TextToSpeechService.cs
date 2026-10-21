@@ -1,4 +1,4 @@
-﻿// <copyright file="TextToSpeechService.cs" company="Justin Shannon">
+// <copyright file="TextToSpeechService.cs" company="Justin Shannon">
 // Copyright (c) Justin Shannon. All rights reserved.
 // Licensed under the GPLv3 license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -7,11 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
+using Vatsim.Vatis.Atis;
 using Vatsim.Vatis.Config;
 using Vatsim.Vatis.Io;
 using Vatsim.Vatis.Networking;
@@ -23,38 +25,31 @@ namespace Vatsim.Vatis.TextToSpeech;
 public class TextToSpeechService : ITextToSpeechService
 {
     private readonly IDownloader _downloader;
-    private readonly IAuthTokenManager _authTokenManager;
     private readonly IAppConfigurationProvider _appConfigurationProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TextToSpeechService"/> class.
     /// </summary>
-    /// <param name="downloader">The downloader instance used for downloading required resources.</param>
-    /// <param name="authTokenManager">The authentication token manager for managing authentication tokens.</param>
-    /// <param name="appConfigurationProvider">The application configuration provider for accessing configuration settings.</param>
+    /// <param name="downloader">The application downloader.</param>
+    /// <param name="authTokenManager">The CAN authentication manager; its token is not a speech service JWT.</param>
+    /// <param name="appConfigurationProvider">The application configuration provider.</param>
     public TextToSpeechService(IDownloader downloader, IAuthTokenManager authTokenManager,
         IAppConfigurationProvider appConfigurationProvider)
     {
         _downloader = downloader;
-        _authTokenManager = authTokenManager;
         _appConfigurationProvider = appConfigurationProvider;
-        VoiceList = [];
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public IReadOnlyDictionary<string, string> BuiltInContractions { get; private set; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-    /// <inheritdoc/>
-    public List<VoiceMetaData> VoiceList { get; private set; }
+    /// <inheritdoc />
+    public List<VoiceMetaData> VoiceList { get; private set; } = [];
 
     /// <inheritdoc />
     public async Task Initialize()
     {
-        if (string.IsNullOrWhiteSpace(_appConfigurationProvider.VoiceListUrl))
-            return;
-
-        // The two requests are independent, so issue them concurrently.
         await Task.WhenAll(LoadVoiceList(), LoadBuiltInContractions());
     }
 
@@ -63,10 +58,6 @@ public class TextToSpeechService : ITextToSpeechService
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-
-        if (string.IsNullOrWhiteSpace(_appConfigurationProvider.TextToSpeechUrl))
-            return null;
-
         var voiceName = station.AtisVoice.Voice;
         if (station.AtisVoice.AlternatingVoices is { Length: >= 2 } voices)
         {
@@ -74,39 +65,35 @@ public class TextToSpeechService : ITextToSpeechService
             voiceName = voices[index < 0 ? index + voices.Length : index];
         }
 
-        var voiceId = VoiceList.FirstOrDefault(v => v.Name == voiceName)?.Id ?? "default";
+        var voiceId = VoiceList.FirstOrDefault(v => v.Name == voiceName || v.Id == voiceName)?.Id;
+        if (voiceId == null && !string.IsNullOrWhiteSpace(voiceName) && voiceName != "Default")
+            throw new AtisBuilderException($"TTS voice '{voiceName}' is unavailable. Reload the application and select a voice from the speech service catalogue.");
 
-        var authToken = await _authTokenManager.GetAuthToken(cancellationToken);
+        // CAN_AUTHENTICATED is a local marker, not a JWT accepted by the vATIS speech service.
+        var jwt = Environment.GetEnvironmentVariable("CAN_TTS_JWT");
+        if (string.IsNullOrWhiteSpace(jwt))
+            throw new AtisBuilderException("The speech service requires authentication. A shared CAN speech service must be configured before TTS is available to all CAN users.");
 
-        try
+        var dto = new TextToSpeechRequestDto
         {
-            var dto = new TextToSpeechRequestDto
-            {
-                Text = text,
-                Voice = voiceId,
-                SpeechRate = station.AtisVoice.SpeechRate,
-                Jwt = authToken
-            };
+            Text = text,
+            Voice = voiceId ?? "default",
+            SpeechRate = station.AtisVoice.SpeechRate,
+            Jwt = jwt
+        };
+        var json = JsonSerializer.Serialize(dto, SourceGenerationContext.NewDefault.TextToSpeechRequestDto);
+        using var response = await _downloader.PostJsonResponse(_appConfigurationProvider.TextToSpeechUrl, json,
+            cancellationToken: cancellationToken);
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            throw new AtisBuilderException("The speech service rejected the TTS token. Supply a valid, unexpired token accepted by that service.");
+        if (!response.IsSuccessStatusCode)
+            throw new AtisBuilderException($"The speech service could not synthesize audio (HTTP {(int)response.StatusCode}).");
 
-            var jsonDto = JsonSerializer.Serialize(dto, SourceGenerationContext.NewDefault.TextToSpeechRequestDto);
-            var response = await _downloader.PostJsonDownloadAsync(_appConfigurationProvider.TextToSpeechUrl, jsonDto,
-                cancellationToken);
-            {
-                using var stream = new MemoryStream();
-                await response.CopyToAsync(stream, cancellationToken);
-                return stream.ToArray();
-            }
-        }
-        catch (TaskCanceledException)
-        {
-            // Ignored
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error requesting audio for voice {Voice}", voiceId);
-        }
-
-        return null;
+        var audio = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        if (audio.Length == 0 || audio.Length % 2 != 0 ||
+            response.Content.Headers.ContentType?.MediaType is "application/json" or "application/problem+json" or "text/html")
+            throw new AtisBuilderException("The speech service did not return valid PCM audio.");
+        return audio;
     }
 
     private async Task LoadVoiceList()
@@ -114,17 +101,13 @@ public class TextToSpeechService : ITextToSpeechService
         try
         {
             var response = await _downloader.DownloadStringAsync(_appConfigurationProvider.VoiceListUrl);
-            {
-                var voices = JsonSerializer.Deserialize(response, SourceGenerationContext.NewDefault.ListVoiceMetaData);
-                if (voices != null)
-                {
-                    VoiceList = voices;
-                }
-            }
+            var voices = JsonSerializer.Deserialize(response, SourceGenerationContext.NewDefault.ListVoiceMetaData);
+            if (voices is { Count: > 0 })
+                VoiceList = voices;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error downloading voice list");
+            Log.Error(ex, "Error downloading vATIS speech voice list");
         }
     }
 
@@ -132,15 +115,12 @@ public class TextToSpeechService : ITextToSpeechService
     {
         try
         {
-            // The contractions endpoint lives alongside the voice list endpoint (e.g. /speech/voices).
-            var contractionsUrl = Regex.Replace(_appConfigurationProvider.VoiceListUrl, @"voices/?$", "contractions");
-            var response = await _downloader.DownloadStringAsync(contractionsUrl);
+            var url = Regex.Replace(_appConfigurationProvider.VoiceListUrl, @"voices/?$", "contractions");
+            var response = await _downloader.DownloadStringAsync(url);
             var contractions = JsonSerializer.Deserialize(response,
                 SourceGenerationContext.NewDefault.DictionaryStringString);
             if (contractions != null)
-            {
                 BuiltInContractions = new Dictionary<string, string>(contractions, StringComparer.OrdinalIgnoreCase);
-            }
         }
         catch (Exception ex)
         {

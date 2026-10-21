@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ATIS for CAN 中文使用文档：迷你窗口">
+<title>迷你窗口 · ATIS for CAN</title>
+<link rel="stylesheet" href="../assets/site.css"></head><body id="top">
+<aside><a class="brand" href="../index.html">ATIS for CAN</a><div class="tag">Cerulean Aviation Network · 中文文档</div>
+<label for="nav-search">查找章节</label><input id="nav-search" class="search" type="search" placeholder="输入标题关键字…" autocomplete="off">
+<nav aria-label="文档导航"><a class="depth-0" href="../index.html">欢迎使用</a><a class="depth-0" href="../system-requirements.html">系统要求</a><a class="depth-0" href="../installation.html">安装与更新</a><a class="depth-0" href="index.html">客户端使用指南</a><a class="depth-1" href="concepts.html">术语与概念</a><a class="depth-1" href="profiles.html">配置文件</a><a class="depth-1" href="main-window.html">主窗口</a><a class="depth-1" href="user-settings.html">用户设置</a><a class="depth-1" href="mini-window.html" aria-current="page">迷你窗口</a><a class="depth-1" href="atis-station.html">ATIS 席位</a><a class="depth-1" href="airport-conditions.html">机场运行情况</a><a class="depth-1" href="notams.html">航行通告</a><a class="depth-1" href="voice-record-atis.html">人工录制 ATIS</a><a class="depth-1" href="text-parsing.html">文本解析</a><a class="depth-1" href="atis-configuration.html">ATIS 配置</a><a class="depth-2" href="atis-configuration/general.html">常规设置</a><a class="depth-2" href="atis-configuration/presets.html">预设与模板</a><a class="depth-2" href="atis-configuration/formatting.html">格式设置</a><a class="depth-3" href="atis-configuration/formatting/observation-time.html">观测时间</a><a class="depth-3" href="atis-configuration/formatting/wind.html">地面风</a><a class="depth-3" href="atis-configuration/formatting/visibility.html">能见度</a><a class="depth-3" href="atis-configuration/formatting/runway-visual-range.html">跑道视程</a><a class="depth-3" href="atis-configuration/formatting/weather.html">天气现象</a><a class="depth-3" href="atis-configuration/formatting/clouds.html">云况</a><a class="depth-3" href="atis-configuration/formatting/temperature.html">气温</a><a class="depth-3" href="atis-configuration/formatting/dewpoint.html">露点</a><a class="depth-3" href="atis-configuration/formatting/altimeter.html">气压与高度表设定</a><a class="depth-3" href="atis-configuration/formatting/wind-shear.html">风切变</a><a class="depth-3" href="atis-configuration/formatting/runway-condition.html">跑道状况</a><a class="depth-3" href="atis-configuration/formatting/remark-wind.html">备注风</a><a class="depth-3" href="atis-configuration/formatting/trend-forecast.html">趋势预报</a><a class="depth-3" href="atis-configuration/formatting/transition-level.html">过渡高度层</a><a class="depth-3" href="atis-configuration/formatting/automatic-observation.html">自动观测</a><a class="depth-3" href="atis-configuration/formatting/notams.html">通告格式</a><a class="depth-3" href="atis-configuration/formatting/closing-statement.html">结束语</a><a class="depth-2" href="atis-configuration/contractions.html">自定义缩略语</a><a class="depth-3" href="atis-configuration/default-contractions.html">默认缩略语表</a><a class="depth-2" href="atis-configuration/sandbox.html">沙盒测试</a><a class="depth-2" href="atis-configuration/voice-packs.html">WAV 语音包</a><a class="depth-1" href="automatic-profile-updates.html">配置文件自动更新</a><a class="depth-1" href="websockets.html">WebSocket API</a><a class="depth-1" href="local-development.html">本地开发</a><a class="depth-0" href="../getting-help.html">获取帮助</a><a class="depth-0" href="../faq.html">常见问题</a><a class="depth-0" href="../privacy-policy.html">隐私与数据说明</a></nav></aside>
+<main><div class="eyebrow">CAN 用户指南 / 迷你窗口</div><article>
+<details class="toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_2">窗口控制</a></li>
+<li><a href="#_3">录音提示</a></li>
+<li><a href="#_4">查看文字与确认更新</a></li>
+<li><a href="#_5">筛选席位</a></li>
+</ul>
+</div>
+</details><h1 id="_1">迷你窗口</h1>
+<p>迷你窗口用紧凑形式显示在线 ATIS 的字母，并可显示观测时间、气压和风。通过主窗口按钮或双击标题栏切换；双击迷你窗口空白区域可恢复主窗口。</p>
+<h2 id="_2">窗口控制</h2>
+<p>右键打开菜单：</p>
+<ul>
+<li><strong>三点图标</strong>：显示或隐藏天气信息，默认隐藏，选择会保存。</li>
+<li><strong>罗盘图标</strong>：按席位设置的磁差显示风向；只有显示天气时可见。需要先在<a href="atis-configuration/formatting/wind.html">地面风</a>配置磁差。</li>
+<li><strong>图钉</strong>：保持窗口置顶。</li>
+<li><strong>双箭头</strong>：返回完整主窗口。</li>
+<li><strong>席位列表</strong>：勾选要显示的在线席位。</li>
+</ul>
+<h2 id="_3">录音提示</h2>
+<p>人工录音席位需要重新录制时，行首出现小红点。悬停提示为 <strong>Voice ATIS needs recording</strong>。天气变更后需要重新核对并录音。</p>
+<h2 id="_4">查看文字与确认更新</h2>
+<p>悬停字母可查看文字 ATIS。新情报字母闪烁时，单击确认；右键或中键点击闪烁字母，可同时确认所有待确认更新。</p>
+<h2 id="_5">筛选席位</h2>
+<p>右键菜单中可隐藏不需要显示的席位；隐藏席位不会播放更新提示音，即使全局未静音。</p>
+<p>原版的青色表示本机席位、红色表示共享席位。CAN 尚未接通原版共享 Hub，不能依靠红色席位完成跨用户监控。</p><h2 id="reference-images">操作截图参考</h2><p>以下为上游原版截图，保留英文标签。用于定位操作；品牌、登录字段与网络行为以本页 CAN 说明为准。</p><figure><img loading="lazy" src="../assets/images/MiniWindow.png" alt="迷你窗口：原版界面操作参考 MiniWindow.png"><figcaption>原版界面参考 · MiniWindow.png</figcaption></figure><figure><img loading="lazy" src="../assets/images/MiniWindowControls.png" alt="迷你窗口：原版界面操作参考 MiniWindowControls.png"><figcaption>原版界面参考 · MiniWindowControls.png</figcaption></figure><figure><img loading="lazy" src="../assets/images/MiniWindowFilterStations.webp" alt="迷你窗口：原版界面操作参考 MiniWindowFilterStations.webp"><figcaption>原版界面参考 · MiniWindowFilterStations.webp</figcaption></figure>
+<div class="pager"><a href="user-settings.html">上一页：用户设置</a><a href="atis-station.html">下一页：ATIS 席位</a></div></article>
+<footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/client/mini-window.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
+依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>
+<script>document.getElementById('nav-search').addEventListener('input',function(){const q=this.value.trim().toLocaleLowerCase();document.querySelectorAll('nav a').forEach(a=>a.hidden=!a.textContent.toLocaleLowerCase().includes(q));});</script>
+</body></html>

@@ -52,10 +52,12 @@ public class AppConfigurationProvider : IAppConfigurationProvider
     public string AtisHubUrl => "";
 
     /// <inheritdoc />
-    public string VoiceListUrl => "";
+    public string VoiceListUrl => Environment.GetEnvironmentVariable("CAN_TTS_VOICES_URL") is { Length: > 0 } url
+        ? url : "https://hub.vatis.app/speech/voices";
 
     /// <inheritdoc />
-    public string TextToSpeechUrl => "";
+    public string TextToSpeechUrl => Environment.GetEnvironmentVariable("CAN_TTS_URL") is { Length: > 0 } url
+        ? url : "https://hub.vatis.app/speech/request";
 
     /// <inheritdoc />
     public string DigitalAtisApiUrl => "https://ceruleanavi.net/api/v1/atis";

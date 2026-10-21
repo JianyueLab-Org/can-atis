@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ATIS for CAN 中文使用文档：常见问题">
+<title>常见问题 · ATIS for CAN</title>
+<link rel="stylesheet" href="assets/site.css"></head><body id="top">
+<aside><a class="brand" href="index.html">ATIS for CAN</a><div class="tag">Cerulean Aviation Network · 中文文档</div>
+<label for="nav-search">查找章节</label><input id="nav-search" class="search" type="search" placeholder="输入标题关键字…" autocomplete="off">
+<nav aria-label="文档导航"><a class="depth-0" href="index.html">欢迎使用</a><a class="depth-0" href="system-requirements.html">系统要求</a><a class="depth-0" href="installation.html">安装与更新</a><a class="depth-0" href="client/index.html">客户端使用指南</a><a class="depth-1" href="client/concepts.html">术语与概念</a><a class="depth-1" href="client/profiles.html">配置文件</a><a class="depth-1" href="client/main-window.html">主窗口</a><a class="depth-1" href="client/user-settings.html">用户设置</a><a class="depth-1" href="client/mini-window.html">迷你窗口</a><a class="depth-1" href="client/atis-station.html">ATIS 席位</a><a class="depth-1" href="client/airport-conditions.html">机场运行情况</a><a class="depth-1" href="client/notams.html">航行通告</a><a class="depth-1" href="client/voice-record-atis.html">人工录制 ATIS</a><a class="depth-1" href="client/text-parsing.html">文本解析</a><a class="depth-1" href="client/atis-configuration.html">ATIS 配置</a><a class="depth-2" href="client/atis-configuration/general.html">常规设置</a><a class="depth-2" href="client/atis-configuration/presets.html">预设与模板</a><a class="depth-2" href="client/atis-configuration/formatting.html">格式设置</a><a class="depth-3" href="client/atis-configuration/formatting/observation-time.html">观测时间</a><a class="depth-3" href="client/atis-configuration/formatting/wind.html">地面风</a><a class="depth-3" href="client/atis-configuration/formatting/visibility.html">能见度</a><a class="depth-3" href="client/atis-configuration/formatting/runway-visual-range.html">跑道视程</a><a class="depth-3" href="client/atis-configuration/formatting/weather.html">天气现象</a><a class="depth-3" href="client/atis-configuration/formatting/clouds.html">云况</a><a class="depth-3" href="client/atis-configuration/formatting/temperature.html">气温</a><a class="depth-3" href="client/atis-configuration/formatting/dewpoint.html">露点</a><a class="depth-3" href="client/atis-configuration/formatting/altimeter.html">气压与高度表设定</a><a class="depth-3" href="client/atis-configuration/formatting/wind-shear.html">风切变</a><a class="depth-3" href="client/atis-configuration/formatting/runway-condition.html">跑道状况</a><a class="depth-3" href="client/atis-configuration/formatting/remark-wind.html">备注风</a><a class="depth-3" href="client/atis-configuration/formatting/trend-forecast.html">趋势预报</a><a class="depth-3" href="client/atis-configuration/formatting/transition-level.html">过渡高度层</a><a class="depth-3" href="client/atis-configuration/formatting/automatic-observation.html">自动观测</a><a class="depth-3" href="client/atis-configuration/formatting/notams.html">通告格式</a><a class="depth-3" href="client/atis-configuration/formatting/closing-statement.html">结束语</a><a class="depth-2" href="client/atis-configuration/contractions.html">自定义缩略语</a><a class="depth-3" href="client/atis-configuration/default-contractions.html">默认缩略语表</a><a class="depth-2" href="client/atis-configuration/sandbox.html">沙盒测试</a><a class="depth-2" href="client/atis-configuration/voice-packs.html">WAV 语音包</a><a class="depth-1" href="client/automatic-profile-updates.html">配置文件自动更新</a><a class="depth-1" href="client/websockets.html">WebSocket API</a><a class="depth-1" href="client/local-development.html">本地开发</a><a class="depth-0" href="getting-help.html">获取帮助</a><a class="depth-0" href="faq.html" aria-current="page">常见问题</a><a class="depth-0" href="privacy-policy.html">隐私与数据说明</a></nav></aside>
+<main><div class="eyebrow">CAN 用户指南 / 常见问题</div><article>
+<details class="toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_2">数据文件在哪里？</a></li>
+<li><a href="#vatsim-can">能用 VATSIM 账号登录 CAN 吗？</a></li>
+<li><a href="#_3">为什么有原版音色列表，却不能合成？</a></li>
+<li><a href="#_4">有哪些语音方式？</a></li>
+<li><a href="#fsd">FSD 在线就表示语音正常吗？</a></li>
+<li><a href="#udp">UDP 通了为什么没有声音？</a></li>
+<li><a href="#_5">为什么看不到其他管制员同步的字母？</a></li>
+<li><a href="#_6">能导入原版配置吗？</a></li>
+<li><a href="#_7">为什么配置更新后本地修改消失？</a></li>
+<li><a href="#_8">如何备份和分享？</a></li>
+<li><a href="#_9">离线能用什么？</a></li>
+</ul>
+</div>
+</details><h1 id="_1">常见问题</h1>
+<h2 id="_2">数据文件在哪里？</h2>
+<p>Windows 默认：</p>
+<pre><code class="language-text">%LOCALAPPDATA%\ceruleanavi.atis-for-can
+</code></pre>
+<p>主窗口或配置列表按 <strong>Ctrl+Shift+O</strong> 可打开。macOS / Linux 如果构建运行，具体位置取决于 .NET 的 LocalApplicationData 目录，再加 <code>ceruleanavi.atis-for-can</code>，不使用原版 <code>org.vatsim.vatis</code>。</p>
+<table>
+<thead>
+<tr>
+<th>路径</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AppConfig.json</td>
+<td>用户设置，包含个人登录资料，不公开分享</td>
+</tr>
+<tr>
+<td>Profiles</td>
+<td>席位配置 JSON</td>
+</tr>
+<tr>
+<td>VoicePacks</td>
+<td>导入的语音包</td>
+</tr>
+<tr>
+<td>Logs</td>
+<td>运行日志</td>
+</tr>
+</tbody>
+</table>
+<h2 id="vatsim-can">能用 VATSIM 账号登录 CAN 吗？</h2>
+<p>CAN 网络连接需要 CAN ID 和 CAN 网络密码。公共发布包不包含个人账号，也不会读取原版 vATIS 保存的账号。</p>
+<h2 id="_3">为什么有原版音色列表，却不能合成？</h2>
+<p>列表是公开的名称与 ID。真正合成由原版远端服务完成并要求有效认证；模型不在客户端里。CAN 尚未部署面向所有用户的独立同款 TTS，显示列表不等于服务已开通。</p>
+<h2 id="_4">有哪些语音方式？</h2>
+<p>可以编辑语音文本、人工录音或使用本地 WAV 语音包。在线 TTS 必须有可用服务。生成音频、在本机试听和通过网络发送是三个独立步骤。</p>
+<h2 id="fsd">FSD 在线就表示语音正常吗？</h2>
+<p>不表示。FSD 管理在线状态和文字情报；语音还需要音频生成、Python worker、Mumble 认证、频率频道和实际发送成功。</p>
+<p>当前 worker 发完一段 PCM 后退出，持续循环播报尚待完善；依赖还是旧 pymumble，不能将 UDP 语音视为当前已交付能力。维护者应以真实接收端持续收听验证。</p>
+<h2 id="udp">UDP 通了为什么没有声音？</h2>
+<p>服务器 UDP Ping 成功只表示探测可达，不表示客户端已完成加密音频协商或发送。应同时检查 TLS 控制连接、认证、频道、Opus 及客户端所用库版本。</p>
+<h2 id="_5">为什么看不到其他管制员同步的字母？</h2>
+<p>原版共享席位依赖 ATIS Hub。CAN 当前未连接该 Hub，原版的共享订阅、自动同步及断线保留行为不能保证。</p>
+<h2 id="_6">能导入原版配置吗？</h2>
+<p>可作为基础导入，但需核对频率、FAA / ICAO 格式、缩略语、数据源和语音配置。原版音色配置不会附带合成权限或模型。</p>
+<h2 id="_7">为什么配置更新后本地修改消失？</h2>
+<p>如果配置带 updateUrl，远端更高版本会自动覆盖大多数本地内容；保留本地名称及 WAV 包选择。详见<a href="client/automatic-profile-updates.html">自动更新</a>。</p>
+<h2 id="_8">如何备份和分享？</h2>
+<p>使用配置导出功能；使用 WAV 包时导出 ZIP 带所需片段。备份个人数据可以自行保存数据目录，但公共分享仅使用已检查的配置和语音包，不含 AppConfig 或令牌。</p>
+<h2 id="_9">离线能用什么？</h2>
+<p>可编辑配置、使用本地机场数据、输入 METAR 并测试本地 WAV 拼接。网络上线、获取天气 / D-ATIS 和在线 TTS 仍需相应服务。</p>
+<div class="pager"><a href="getting-help.html">上一页：获取帮助</a><a href="privacy-policy.html">下一页：隐私与数据说明</a></div></article>
+<footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/faq.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
+依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>
+<script>document.getElementById('nav-search').addEventListener('input',function(){const q=this.value.trim().toLocaleLowerCase();document.querySelectorAll('nav a').forEach(a=>a.hidden=!a.textContent.toLocaleLowerCase().includes(q));});</script>
+</body></html>

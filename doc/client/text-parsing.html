@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ATIS for CAN 中文使用文档：文本解析">
+<title>文本解析 · ATIS for CAN</title>
+<link rel="stylesheet" href="../assets/site.css"></head><body id="top">
+<aside><a class="brand" href="../index.html">ATIS for CAN</a><div class="tag">Cerulean Aviation Network · 中文文档</div>
+<label for="nav-search">查找章节</label><input id="nav-search" class="search" type="search" placeholder="输入标题关键字…" autocomplete="off">
+<nav aria-label="文档导航"><a class="depth-0" href="../index.html">欢迎使用</a><a class="depth-0" href="../system-requirements.html">系统要求</a><a class="depth-0" href="../installation.html">安装与更新</a><a class="depth-0" href="index.html">客户端使用指南</a><a class="depth-1" href="concepts.html">术语与概念</a><a class="depth-1" href="profiles.html">配置文件</a><a class="depth-1" href="main-window.html">主窗口</a><a class="depth-1" href="user-settings.html">用户设置</a><a class="depth-1" href="mini-window.html">迷你窗口</a><a class="depth-1" href="atis-station.html">ATIS 席位</a><a class="depth-1" href="airport-conditions.html">机场运行情况</a><a class="depth-1" href="notams.html">航行通告</a><a class="depth-1" href="voice-record-atis.html">人工录制 ATIS</a><a class="depth-1" href="text-parsing.html" aria-current="page">文本解析</a><a class="depth-1" href="atis-configuration.html">ATIS 配置</a><a class="depth-2" href="atis-configuration/general.html">常规设置</a><a class="depth-2" href="atis-configuration/presets.html">预设与模板</a><a class="depth-2" href="atis-configuration/formatting.html">格式设置</a><a class="depth-3" href="atis-configuration/formatting/observation-time.html">观测时间</a><a class="depth-3" href="atis-configuration/formatting/wind.html">地面风</a><a class="depth-3" href="atis-configuration/formatting/visibility.html">能见度</a><a class="depth-3" href="atis-configuration/formatting/runway-visual-range.html">跑道视程</a><a class="depth-3" href="atis-configuration/formatting/weather.html">天气现象</a><a class="depth-3" href="atis-configuration/formatting/clouds.html">云况</a><a class="depth-3" href="atis-configuration/formatting/temperature.html">气温</a><a class="depth-3" href="atis-configuration/formatting/dewpoint.html">露点</a><a class="depth-3" href="atis-configuration/formatting/altimeter.html">气压与高度表设定</a><a class="depth-3" href="atis-configuration/formatting/wind-shear.html">风切变</a><a class="depth-3" href="atis-configuration/formatting/runway-condition.html">跑道状况</a><a class="depth-3" href="atis-configuration/formatting/remark-wind.html">备注风</a><a class="depth-3" href="atis-configuration/formatting/trend-forecast.html">趋势预报</a><a class="depth-3" href="atis-configuration/formatting/transition-level.html">过渡高度层</a><a class="depth-3" href="atis-configuration/formatting/automatic-observation.html">自动观测</a><a class="depth-3" href="atis-configuration/formatting/notams.html">通告格式</a><a class="depth-3" href="atis-configuration/formatting/closing-statement.html">结束语</a><a class="depth-2" href="atis-configuration/contractions.html">自定义缩略语</a><a class="depth-3" href="atis-configuration/default-contractions.html">默认缩略语表</a><a class="depth-2" href="atis-configuration/sandbox.html">沙盒测试</a><a class="depth-2" href="atis-configuration/voice-packs.html">WAV 语音包</a><a class="depth-1" href="automatic-profile-updates.html">配置文件自动更新</a><a class="depth-1" href="websockets.html">WebSocket API</a><a class="depth-1" href="local-development.html">本地开发</a><a class="depth-0" href="../getting-help.html">获取帮助</a><a class="depth-0" href="../faq.html">常见问题</a><a class="depth-0" href="../privacy-policy.html">隐私与数据说明</a></nav></aside>
+<main><div class="eyebrow">CAN 用户指南 / 文本解析</div><article>
+<details class="toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_2">编辑器中的预览</a></li>
+<li><a href="#_3">语言说明</a></li>
+</ul>
+</div>
+</details><h1 id="_1">文本解析</h1>
+<p>机场运行情况、通告和语音模板支持以下规则。文档保留英文读音示例，避免把“汉化操作说明”误当作“改变航空通话语言”。</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>输入示例</th>
+<th>语音文本效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>滑行道</td>
+<td><code>TWY E16</code>，也支持 <code>TWYS</code></td>
+<td>TAXIWAY ECHO SIXTEEN</td>
+</tr>
+<tr>
+<td>跑道</td>
+<td><code>RWY 25R</code>，也支持 RWYS / RUNWAY / RUNWAYS</td>
+<td>RUNWAY TWO FIVE RIGHT</td>
+</tr>
+<tr>
+<td>仅跑道号</td>
+<td><code>^25R</code></td>
+<td>TWO FIVE RIGHT</td>
+</tr>
+<tr>
+<td>成组数字</td>
+<td><code>*5058</code> 或 <code>{5058}</code></td>
+<td>FIVE THOUSAND AND FIFTY-EIGHT</td>
+</tr>
+<tr>
+<td>负数</td>
+<td><code>*-8</code></td>
+<td>MINUS EIGHT</td>
+</tr>
+<tr>
+<td>机场名称</td>
+<td><code>+KLAX</code></td>
+<td>从机场数据库展开机场名称</td>
+</tr>
+<tr>
+<td>导航台名称</td>
+<td><code>+GBN</code></td>
+<td>从导航数据库展开为 GILA BEND</td>
+</tr>
+<tr>
+<td>缩略语</td>
+<td><code>@RNAV</code></td>
+<td>按席位定义的 Text / Voice 字段替换</td>
+</tr>
+</tbody>
+</table>
+<p>输入 <code>@</code> 会显示可用缩略语自动补全菜单，详见<a href="atis-configuration/contractions.html">自定义缩略语</a>。数据库中不存在的机场或导航台无法凭空补出名称。</p>
+<h2 id="_2">编辑器中的预览</h2>
+<p>点状下划线表示发音与显示文本不同，悬停可查看展开后的语音文本。它只是预览，不写入文字 ATIS。</p>
+<h2 id="_3">语言说明</h2>
+<p>中文内容可以作为模板和文本编辑，但所选合成服务或 WAV 包必须能处理对应语言。英文缩略语表、数字读法和英文音色不会因界面汉化而自动变成中文播报。</p>
+<div class="pager"><a href="voice-record-atis.html">上一页：人工录制 ATIS</a><a href="atis-configuration.html">下一页：ATIS 配置</a></div></article>
+<footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/client/text-parsing.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
+依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>
+<script>document.getElementById('nav-search').addEventListener('input',function(){const q=this.value.trim().toLocaleLowerCase();document.querySelectorAll('nav a').forEach(a=>a.hidden=!a.textContent.toLocaleLowerCase().includes(q));});</script>
+</body></html>

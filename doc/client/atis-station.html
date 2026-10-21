@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ATIS for CAN 中文使用文档：ATIS 席位">
+<title>ATIS 席位 · ATIS for CAN</title>
+<link rel="stylesheet" href="../assets/site.css"></head><body id="top">
+<aside><a class="brand" href="../index.html">ATIS for CAN</a><div class="tag">Cerulean Aviation Network · 中文文档</div>
+<label for="nav-search">查找章节</label><input id="nav-search" class="search" type="search" placeholder="输入标题关键字…" autocomplete="off">
+<nav aria-label="文档导航"><a class="depth-0" href="../index.html">欢迎使用</a><a class="depth-0" href="../system-requirements.html">系统要求</a><a class="depth-0" href="../installation.html">安装与更新</a><a class="depth-0" href="index.html">客户端使用指南</a><a class="depth-1" href="concepts.html">术语与概念</a><a class="depth-1" href="profiles.html">配置文件</a><a class="depth-1" href="main-window.html">主窗口</a><a class="depth-1" href="user-settings.html">用户设置</a><a class="depth-1" href="mini-window.html">迷你窗口</a><a class="depth-1" href="atis-station.html" aria-current="page">ATIS 席位</a><a class="depth-1" href="airport-conditions.html">机场运行情况</a><a class="depth-1" href="notams.html">航行通告</a><a class="depth-1" href="voice-record-atis.html">人工录制 ATIS</a><a class="depth-1" href="text-parsing.html">文本解析</a><a class="depth-1" href="atis-configuration.html">ATIS 配置</a><a class="depth-2" href="atis-configuration/general.html">常规设置</a><a class="depth-2" href="atis-configuration/presets.html">预设与模板</a><a class="depth-2" href="atis-configuration/formatting.html">格式设置</a><a class="depth-3" href="atis-configuration/formatting/observation-time.html">观测时间</a><a class="depth-3" href="atis-configuration/formatting/wind.html">地面风</a><a class="depth-3" href="atis-configuration/formatting/visibility.html">能见度</a><a class="depth-3" href="atis-configuration/formatting/runway-visual-range.html">跑道视程</a><a class="depth-3" href="atis-configuration/formatting/weather.html">天气现象</a><a class="depth-3" href="atis-configuration/formatting/clouds.html">云况</a><a class="depth-3" href="atis-configuration/formatting/temperature.html">气温</a><a class="depth-3" href="atis-configuration/formatting/dewpoint.html">露点</a><a class="depth-3" href="atis-configuration/formatting/altimeter.html">气压与高度表设定</a><a class="depth-3" href="atis-configuration/formatting/wind-shear.html">风切变</a><a class="depth-3" href="atis-configuration/formatting/runway-condition.html">跑道状况</a><a class="depth-3" href="atis-configuration/formatting/remark-wind.html">备注风</a><a class="depth-3" href="atis-configuration/formatting/trend-forecast.html">趋势预报</a><a class="depth-3" href="atis-configuration/formatting/transition-level.html">过渡高度层</a><a class="depth-3" href="atis-configuration/formatting/automatic-observation.html">自动观测</a><a class="depth-3" href="atis-configuration/formatting/notams.html">通告格式</a><a class="depth-3" href="atis-configuration/formatting/closing-statement.html">结束语</a><a class="depth-2" href="atis-configuration/contractions.html">自定义缩略语</a><a class="depth-3" href="atis-configuration/default-contractions.html">默认缩略语表</a><a class="depth-2" href="atis-configuration/sandbox.html">沙盒测试</a><a class="depth-2" href="atis-configuration/voice-packs.html">WAV 语音包</a><a class="depth-1" href="automatic-profile-updates.html">配置文件自动更新</a><a class="depth-1" href="websockets.html">WebSocket API</a><a class="depth-1" href="local-development.html">本地开发</a><a class="depth-0" href="../getting-help.html">获取帮助</a><a class="depth-0" href="../faq.html">常见问题</a><a class="depth-0" href="../privacy-policy.html">隐私与数据说明</a></nav></aside>
+<main><div class="eyebrow">CAN 用户指南 / ATIS 席位</div><article>
+<details class="toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_1">发音预览下划线</a></li>
+<li><a href="#_2">新情报更新</a></li>
+<li><a href="#_3">手动输入字母</a></li>
+<li><a href="#metar">临时覆盖 METAR</a></li>
+<li><a href="#d-atis">获取真实 D-ATIS 字母</a></li>
+<li><a href="#d-atis_1">获取真实 D-ATIS 内容</a></li>
+<li><a href="#can">CAN 的共享情报状态</a></li>
+</ul>
+</div>
+</details><h1 id="atis">ATIS 席位</h1>
+<p>每个席位在主界面中独立显示，连接后以青色突出当前字母。固定机场运行情况和通告也以青色只读文字展示，需要在对应管理窗口修改。</p>
+<h2 id="_1">发音预览下划线</h2>
+<p>编辑器以点状下划线标记“显示与发音不同”的文字，悬停可查看实际语音文本，例如 <code>RWY 23</code> → <code>RUNWAY TWO THREE</code>。标记包括：</p>
+<ul>
+<li>自定义或服务端默认缩略语；</li>
+<li>跑道、滑行道，如 <code>RWY 25R</code>、<code>TWY E16</code>；</li>
+<li>成组数字，如 <code>*5058</code>；</li>
+<li>带加号的机场或导航台，如 <code>+KLAX</code>。</li>
+</ul>
+<p>下划线仅供编辑预览，不写入 ATIS。预设及沙盒编辑器也提供相同功能。详见<a href="text-parsing.html">文本解析</a>。</p>
+<h2 id="_2">新情报更新</h2>
+<p>更新准备完成后，席位字母闪烁；若提示音开启，还会播放提示。选择席位并左键点击字母确认。已确认后可继续用左键 / 右键调整字母。</p>
+<h2 id="_3">手动输入字母</h2>
+<p>在字母框上 <strong>Shift+左键双击</strong>进入编辑，输入字母并按 Enter 确认，Esc 取消。字母必须在席位配置的范围内。</p>
+<h2 id="metar">临时覆盖 METAR</h2>
+<ol>
+<li>席位已连接时，右键 METAR 框，选择 <strong>Override METAR…</strong>。</li>
+<li>蓝色边框表示可编辑，输入完整的机场 METAR。</li>
+<li>Enter 应用；Esc 或点击其他区域取消。</li>
+</ol>
+<p>覆盖后文字、语音文本、风、气压和 WebSocket 输出使用新 METAR，并按更新逻辑推进字母。若内容没有变化则不更新。活动覆盖使用琥珀色边框；解析失败显示红色边框，悬停可查看错误。</p>
+<p>选择 <strong>Revert to Network METAR</strong> 恢复网络报文。新网络 METAR 到达或席位断开后，覆盖自动清除；覆盖不会保存到预设或配置。</p>
+<h2 id="d-atis">获取真实 D-ATIS 字母</h2>
+<p>在用户设置启用自动获取字母后，客户端可尝试从 CAN 数字情报接口加载受支持机场字母。仅取字母不会同时导入机场运行情况或通告。</p>
+<h2 id="d-atis_1">获取真实 D-ATIS 内容</h2>
+<ol>
+<li>启用 <strong>Automatically fetch D-ATIS</strong>。</li>
+<li>创建名为 <strong>D-ATIS</strong> 的预设并选中，名称不区分大小写。</li>
+<li>客户端立即尝试获取，此后选中该预设期间每 5 分钟刷新。</li>
+<li>切换其他预设停止自动刷新。</li>
+</ol>
+<p>Combined 席位优先使用综合情报，没有时可回退离场情报；Arrival / Departure 使用对应类型。没有数据时显示 <code>D-ATIS NOT AVBL.</code>。</p>
+<p>开头的机场、字母、天气以及结尾的确认句会被剥离，仅保留运行情况和通告，并应用缩略语。自动获取内容不直接保存到预设，自己的编辑才会保存。可在<a href="atis-configuration/presets.html">预设的 D-ATIS 设置</a>调整替换规则。</p>
+<h2 id="can">CAN 的共享情报状态</h2>
+<p>原版的跨用户字母同步、共享运行情况以及断线后保留 5 分钟都依赖原版 ATIS Hub。CAN 当前未接通该服务，本页不把这些行为作为可用功能；接班时需与上一席位使用者协调。</p><h2 id="reference-images">操作截图参考</h2><p>以下为上游原版截图，保留英文标签。用于定位操作；品牌、登录字段与网络行为以本页 CAN 说明为准。</p><figure><img loading="lazy" src="../assets/images/AtisStations.png" alt="ATIS 席位：原版界面操作参考 AtisStations.png"><figcaption>原版界面参考 · AtisStations.png</figcaption></figure><figure><img loading="lazy" src="../assets/images/AcknowledgeUpdate.gif" alt="ATIS 席位：原版界面操作参考 AcknowledgeUpdate.gif"><figcaption>原版界面参考 · AcknowledgeUpdate.gif</figcaption></figure><figure><img loading="lazy" src="../assets/images/TypeAtisLetter.gif" alt="ATIS 席位：原版界面操作参考 TypeAtisLetter.gif"><figcaption>原版界面参考 · TypeAtisLetter.gif</figcaption></figure><figure><img loading="lazy" src="../assets/images/MetarOverride_Menu.png" alt="ATIS 席位：原版界面操作参考 MetarOverride_Menu.png"><figcaption>原版界面参考 · MetarOverride_Menu.png</figcaption></figure><figure><img loading="lazy" src="../assets/images/MetarOverride_Editing.png" alt="ATIS 席位：原版界面操作参考 MetarOverride_Editing.png"><figcaption>原版界面参考 · MetarOverride_Editing.png</figcaption></figure><figure><img loading="lazy" src="../assets/images/MetarOverride_Overridden.png" alt="ATIS 席位：原版界面操作参考 MetarOverride_Overridden.png"><figcaption>原版界面参考 · MetarOverride_Overridden.png</figcaption></figure><figure><img loading="lazy" src="../assets/images/MetarOverride_Error.png" alt="ATIS 席位：原版界面操作参考 MetarOverride_Error.png"><figcaption>原版界面参考 · MetarOverride_Error.png</figcaption></figure>
+<div class="pager"><a href="mini-window.html">上一页：迷你窗口</a><a href="airport-conditions.html">下一页：机场运行情况</a></div></article>
+<footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/client/atis-station.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
+依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>
+<script>document.getElementById('nav-search').addEventListener('input',function(){const q=this.value.trim().toLocaleLowerCase();document.querySelectorAll('nav a').forEach(a=>a.hidden=!a.textContent.toLocaleLowerCase().includes(q));});</script>
+</body></html>

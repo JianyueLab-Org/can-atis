@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ATIS for CAN 中文使用文档：机场运行情况">
+<title>机场运行情况 · ATIS for CAN</title>
+<link rel="stylesheet" href="../assets/site.css"></head><body id="top">
+<aside><a class="brand" href="../index.html">ATIS for CAN</a><div class="tag">Cerulean Aviation Network · 中文文档</div>
+<label for="nav-search">查找章节</label><input id="nav-search" class="search" type="search" placeholder="输入标题关键字…" autocomplete="off">
+<nav aria-label="文档导航"><a class="depth-0" href="../index.html">欢迎使用</a><a class="depth-0" href="../system-requirements.html">系统要求</a><a class="depth-0" href="../installation.html">安装与更新</a><a class="depth-0" href="index.html">客户端使用指南</a><a class="depth-1" href="concepts.html">术语与概念</a><a class="depth-1" href="profiles.html">配置文件</a><a class="depth-1" href="main-window.html">主窗口</a><a class="depth-1" href="user-settings.html">用户设置</a><a class="depth-1" href="mini-window.html">迷你窗口</a><a class="depth-1" href="atis-station.html">ATIS 席位</a><a class="depth-1" href="airport-conditions.html" aria-current="page">机场运行情况</a><a class="depth-1" href="notams.html">航行通告</a><a class="depth-1" href="voice-record-atis.html">人工录制 ATIS</a><a class="depth-1" href="text-parsing.html">文本解析</a><a class="depth-1" href="atis-configuration.html">ATIS 配置</a><a class="depth-2" href="atis-configuration/general.html">常规设置</a><a class="depth-2" href="atis-configuration/presets.html">预设与模板</a><a class="depth-2" href="atis-configuration/formatting.html">格式设置</a><a class="depth-3" href="atis-configuration/formatting/observation-time.html">观测时间</a><a class="depth-3" href="atis-configuration/formatting/wind.html">地面风</a><a class="depth-3" href="atis-configuration/formatting/visibility.html">能见度</a><a class="depth-3" href="atis-configuration/formatting/runway-visual-range.html">跑道视程</a><a class="depth-3" href="atis-configuration/formatting/weather.html">天气现象</a><a class="depth-3" href="atis-configuration/formatting/clouds.html">云况</a><a class="depth-3" href="atis-configuration/formatting/temperature.html">气温</a><a class="depth-3" href="atis-configuration/formatting/dewpoint.html">露点</a><a class="depth-3" href="atis-configuration/formatting/altimeter.html">气压与高度表设定</a><a class="depth-3" href="atis-configuration/formatting/wind-shear.html">风切变</a><a class="depth-3" href="atis-configuration/formatting/runway-condition.html">跑道状况</a><a class="depth-3" href="atis-configuration/formatting/remark-wind.html">备注风</a><a class="depth-3" href="atis-configuration/formatting/trend-forecast.html">趋势预报</a><a class="depth-3" href="atis-configuration/formatting/transition-level.html">过渡高度层</a><a class="depth-3" href="atis-configuration/formatting/automatic-observation.html">自动观测</a><a class="depth-3" href="atis-configuration/formatting/notams.html">通告格式</a><a class="depth-3" href="atis-configuration/formatting/closing-statement.html">结束语</a><a class="depth-2" href="atis-configuration/contractions.html">自定义缩略语</a><a class="depth-3" href="atis-configuration/default-contractions.html">默认缩略语表</a><a class="depth-2" href="atis-configuration/sandbox.html">沙盒测试</a><a class="depth-2" href="atis-configuration/voice-packs.html">WAV 语音包</a><a class="depth-1" href="automatic-profile-updates.html">配置文件自动更新</a><a class="depth-1" href="websockets.html">WebSocket API</a><a class="depth-1" href="local-development.html">本地开发</a><a class="depth-0" href="../getting-help.html">获取帮助</a><a class="depth-0" href="../faq.html">常见问题</a><a class="depth-0" href="../privacy-policy.html">隐私与数据说明</a></nav></aside>
+<main><div class="eyebrow">CAN 用户指南 / 机场运行情况</div><article>
+<details class="toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_2">管理固定消息</a></li>
+<li><a href="#_3">插入顺序</a></li>
+<li><a href="#_4">消息分隔符</a></li>
+</ul>
+</div>
+</details><h1 id="_1">机场运行情况</h1>
+<p>机场运行情况包括使用跑道、进近方式等。除主窗口中的自由文本外，还可以创建可勾选的固定消息。固定消息保存在席位中，可以配合不同预设使用。</p>
+<h2 id="_2">管理固定消息</h2>
+<ol>
+<li>点击自由文本框上方的 <strong>AIRPORT CONDITIONS</strong> 标题。</li>
+<li>在弹窗中新建、编辑或删除消息。</li>
+<li>使用 <strong>Up / Down</strong> 调整顺序，只有勾选的消息会写入 ATIS，顺序与列表一致。</li>
+</ol>
+<p>编辑时输入 <code>@</code> 后跟缩略语变量名即可搜索自动补全。选中补全项后 <code>@</code> 可能被去掉；变量本身仍可识别。</p>
+<h2 id="_3">插入顺序</h2>
+<p>启用 <strong>Include Before Free-form Airport Conditions</strong> 后，固定消息在自由文本前，否则在后。两部分之间用空格连接。</p>
+<h2 id="_4">消息分隔符</h2>
+<ul>
+<li><strong>Default separator</strong>：固定消息之间的默认分隔符，通常为句号加空格 <code>.</code>。</li>
+<li><strong>Separator after</strong>：当前消息后使用的自定义分隔符，留空使用默认；最后一条消息后无效。</li>
+</ul>
+<p>分隔符按原样使用，空格也必须明确输入。例如第一条后设置 <code>...</code>：</p>
+<pre><code class="language-text">SIMUL ILS APPS IN PROG RWYS 24R AND 25L... SIMUL VIS APPS TO ALL RWYS ARE IN PROG. RWY 6L/24R CLSD
+</code></pre>
+<p>全部使用默认分隔符时，程序会清理重复标点。只要自定义了分隔符，就按输入原样连接；此时可让消息本身不带句号，由分隔符统一补充。</p><h2 id="reference-images">操作截图参考</h2><p>以下为上游原版截图，保留英文标签。用于定位操作；品牌、登录字段与网络行为以本页 CAN 说明为准。</p><figure><img loading="lazy" src="../assets/images/AirportConditionsDialog.png" alt="机场运行情况：原版界面操作参考 AirportConditionsDialog.png"><figcaption>原版界面参考 · AirportConditionsDialog.png</figcaption></figure><figure><img loading="lazy" src="../assets/images/StaticDefinitionEditorDialog.png" alt="机场运行情况：原版界面操作参考 StaticDefinitionEditorDialog.png"><figcaption>原版界面参考 · StaticDefinitionEditorDialog.png</figcaption></figure>
+<div class="pager"><a href="atis-station.html">上一页：ATIS 席位</a><a href="notams.html">下一页：航行通告</a></div></article>
+<footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/client/airport-conditions.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
+依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>
+<script>document.getElementById('nav-search').addEventListener('input',function(){const q=this.value.trim().toLocaleLowerCase();document.querySelectorAll('nav a').forEach(a=>a.hidden=!a.textContent.toLocaleLowerCase().includes(q));});</script>
+</body></html>

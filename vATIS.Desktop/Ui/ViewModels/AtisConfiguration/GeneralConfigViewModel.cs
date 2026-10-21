@@ -587,8 +587,7 @@ public class GeneralConfigViewModel : ReactiveViewModelBase, IDisposable
         UseDecimalTerminology = station.UseDecimalTerminology;
         RandomizeAtisLetterOnConnect = station.RandomizeAtisLetterOnConnect;
         IdsEndpoint = station.IdsEndpoint;
-        // CAN does not provide a compatible authenticated TTS endpoint.
-        UseTextToSpeech = false;
+        UseTextToSpeech = station.AtisVoice.UseTextToSpeech;
         UseWavPack = station.AtisVoice.UseWavPack;
         _wavPackId = station.AtisVoice.WavPackId;
         _wavPackPath = station.AtisVoice.WavPackPath;

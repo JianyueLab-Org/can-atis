@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ATIS for CAN 中文使用文档：配置文件">
+<title>配置文件 · ATIS for CAN</title>
+<link rel="stylesheet" href="../assets/site.css"></head><body id="top">
+<aside><a class="brand" href="../index.html">ATIS for CAN</a><div class="tag">Cerulean Aviation Network · 中文文档</div>
+<label for="nav-search">查找章节</label><input id="nav-search" class="search" type="search" placeholder="输入标题关键字…" autocomplete="off">
+<nav aria-label="文档导航"><a class="depth-0" href="../index.html">欢迎使用</a><a class="depth-0" href="../system-requirements.html">系统要求</a><a class="depth-0" href="../installation.html">安装与更新</a><a class="depth-0" href="index.html">客户端使用指南</a><a class="depth-1" href="concepts.html">术语与概念</a><a class="depth-1" href="profiles.html" aria-current="page">配置文件</a><a class="depth-1" href="main-window.html">主窗口</a><a class="depth-1" href="user-settings.html">用户设置</a><a class="depth-1" href="mini-window.html">迷你窗口</a><a class="depth-1" href="atis-station.html">ATIS 席位</a><a class="depth-1" href="airport-conditions.html">机场运行情况</a><a class="depth-1" href="notams.html">航行通告</a><a class="depth-1" href="voice-record-atis.html">人工录制 ATIS</a><a class="depth-1" href="text-parsing.html">文本解析</a><a class="depth-1" href="atis-configuration.html">ATIS 配置</a><a class="depth-2" href="atis-configuration/general.html">常规设置</a><a class="depth-2" href="atis-configuration/presets.html">预设与模板</a><a class="depth-2" href="atis-configuration/formatting.html">格式设置</a><a class="depth-3" href="atis-configuration/formatting/observation-time.html">观测时间</a><a class="depth-3" href="atis-configuration/formatting/wind.html">地面风</a><a class="depth-3" href="atis-configuration/formatting/visibility.html">能见度</a><a class="depth-3" href="atis-configuration/formatting/runway-visual-range.html">跑道视程</a><a class="depth-3" href="atis-configuration/formatting/weather.html">天气现象</a><a class="depth-3" href="atis-configuration/formatting/clouds.html">云况</a><a class="depth-3" href="atis-configuration/formatting/temperature.html">气温</a><a class="depth-3" href="atis-configuration/formatting/dewpoint.html">露点</a><a class="depth-3" href="atis-configuration/formatting/altimeter.html">气压与高度表设定</a><a class="depth-3" href="atis-configuration/formatting/wind-shear.html">风切变</a><a class="depth-3" href="atis-configuration/formatting/runway-condition.html">跑道状况</a><a class="depth-3" href="atis-configuration/formatting/remark-wind.html">备注风</a><a class="depth-3" href="atis-configuration/formatting/trend-forecast.html">趋势预报</a><a class="depth-3" href="atis-configuration/formatting/transition-level.html">过渡高度层</a><a class="depth-3" href="atis-configuration/formatting/automatic-observation.html">自动观测</a><a class="depth-3" href="atis-configuration/formatting/notams.html">通告格式</a><a class="depth-3" href="atis-configuration/formatting/closing-statement.html">结束语</a><a class="depth-2" href="atis-configuration/contractions.html">自定义缩略语</a><a class="depth-3" href="atis-configuration/default-contractions.html">默认缩略语表</a><a class="depth-2" href="atis-configuration/sandbox.html">沙盒测试</a><a class="depth-2" href="atis-configuration/voice-packs.html">WAV 语音包</a><a class="depth-1" href="automatic-profile-updates.html">配置文件自动更新</a><a class="depth-1" href="websockets.html">WebSocket API</a><a class="depth-1" href="local-development.html">本地开发</a><a class="depth-0" href="../getting-help.html">获取帮助</a><a class="depth-0" href="../faq.html">常见问题</a><a class="depth-0" href="../privacy-policy.html">隐私与数据说明</a></nav></aside>
+<main><div class="eyebrow">CAN 用户指南 / 配置文件</div><article>
+<details class="toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_2">新建、重命名与删除</a></li>
+<li><a href="#_3">导入与导出</a></li>
+<li><a href="#_4">通过命令行打开</a><ul>
+<li><a href="#id">查找配置 ID</a></li>
+</ul>
+</li>
+<li><a href="#_5">导入文件后立即打开</a></li>
+<li><a href="#_6">分享配置</a></li>
+</ul>
+</div>
+</details><h1 id="_1">配置文件</h1>
+<p>启动客户端后首先出现配置列表，首次使用可能为空。通常导入 CAN 管制单位提供的配置。选中配置点击 <strong>Open（打开）</strong>，或双击名称，进入主窗口。</p>
+<h2 id="_2">新建、重命名与删除</h2>
+<ul>
+<li><strong>New</strong>：输入名称并确认，创建配置。</li>
+<li><strong>Rename</strong>：修改列表中的显示名称。</li>
+<li><strong>Delete</strong>：删除选中的配置；需要保留时先导出。</li>
+</ul>
+<h2 id="_3">导入与导出</h2>
+<p><strong>Import</strong> 可导入配置 JSON；使用 WAV 语音包的配置还可以导入带音频的 ZIP。导入后会出现在列表中。</p>
+<p><strong>Export</strong> 导出所选配置。若席位使用 WAV 语音包，会生成包含配置和所需音频片段的 ZIP；导入者无需另行复制完整语音包。</p>
+<p>原版配置可以用作编辑基础，但需要核对 CAN 频率、模板、语音来源及数据源。它不包含可直接复用的原版服务权限。</p>
+<h2 id="_4">通过命令行打开</h2>
+<pre><code class="language-powershell">.\atis-for-can.exe --profile 3068994d-f5a0-46db-a5d1-9b0fb8e67cc5
+</code></pre>
+<h3 id="id">查找配置 ID</h3>
+<p>打开 <code>%LOCALAPPDATA%\ceruleanavi.atis-for-can\Profiles</code>，JSON 文件名即配置 ID。查看文件中的 <code>name</code> 可确认配置名称。主窗口或配置列表的 <strong>Ctrl+Shift+O</strong> 可打开数据目录。</p>
+<h2 id="_5">导入文件后立即打开</h2>
+<pre><code class="language-powershell">.\atis-for-can.exe --import-profile &quot;C:\Profiles\CAN-Guangzhou.json&quot;
+</code></pre>
+<p>与界面的 Import 不同：</p>
+<ul>
+<li>保留文件中的 ID，替换已安装的同 ID 配置；界面 Import 创建新 ID。</li>
+<li>仅接受配置 JSON，不接受语音包 ZIP。</li>
+<li>导入失败时回到配置列表。</li>
+</ul>
+<h2 id="_6">分享配置</h2>
+<p>只分享导出的配置或语音包，不要分享包含个人登录资料的 <code>AppConfig.json</code>。公共配置中的示例账号、密码和令牌应留空。</p><h2 id="reference-images">操作截图参考</h2><p>以下为上游原版截图，保留英文标签。用于定位操作；品牌、登录字段与网络行为以本页 CAN 说明为准。</p><figure><img loading="lazy" src="../assets/images/ProfileDialog.png" alt="配置文件：原版界面操作参考 ProfileDialog.png"><figcaption>原版界面参考 · ProfileDialog.png</figcaption></figure>
+<div class="pager"><a href="concepts.html">上一页：术语与概念</a><a href="main-window.html">下一页：主窗口</a></div></article>
+<footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/client/profiles.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
+依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>
+<script>document.getElementById('nav-search').addEventListener('input',function(){const q=this.value.trim().toLocaleLowerCase();document.querySelectorAll('nav a').forEach(a=>a.hidden=!a.textContent.toLocaleLowerCase().includes(q));});</script>
+</body></html>

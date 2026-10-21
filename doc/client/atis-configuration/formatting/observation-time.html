@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ATIS for CAN 中文使用文档：观测时间">
+<title>观测时间 · ATIS for CAN</title>
+<link rel="stylesheet" href="../../../assets/site.css"></head><body id="top">
+<aside><a class="brand" href="../../../index.html">ATIS for CAN</a><div class="tag">Cerulean Aviation Network · 中文文档</div>
+<label for="nav-search">查找章节</label><input id="nav-search" class="search" type="search" placeholder="输入标题关键字…" autocomplete="off">
+<nav aria-label="文档导航"><a class="depth-0" href="../../../index.html">欢迎使用</a><a class="depth-0" href="../../../system-requirements.html">系统要求</a><a class="depth-0" href="../../../installation.html">安装与更新</a><a class="depth-0" href="../../index.html">客户端使用指南</a><a class="depth-1" href="../../concepts.html">术语与概念</a><a class="depth-1" href="../../profiles.html">配置文件</a><a class="depth-1" href="../../main-window.html">主窗口</a><a class="depth-1" href="../../user-settings.html">用户设置</a><a class="depth-1" href="../../mini-window.html">迷你窗口</a><a class="depth-1" href="../../atis-station.html">ATIS 席位</a><a class="depth-1" href="../../airport-conditions.html">机场运行情况</a><a class="depth-1" href="../../notams.html">航行通告</a><a class="depth-1" href="../../voice-record-atis.html">人工录制 ATIS</a><a class="depth-1" href="../../text-parsing.html">文本解析</a><a class="depth-1" href="../../atis-configuration.html">ATIS 配置</a><a class="depth-2" href="../general.html">常规设置</a><a class="depth-2" href="../presets.html">预设与模板</a><a class="depth-2" href="../formatting.html">格式设置</a><a class="depth-3" href="observation-time.html" aria-current="page">观测时间</a><a class="depth-3" href="wind.html">地面风</a><a class="depth-3" href="visibility.html">能见度</a><a class="depth-3" href="runway-visual-range.html">跑道视程</a><a class="depth-3" href="weather.html">天气现象</a><a class="depth-3" href="clouds.html">云况</a><a class="depth-3" href="temperature.html">气温</a><a class="depth-3" href="dewpoint.html">露点</a><a class="depth-3" href="altimeter.html">气压与高度表设定</a><a class="depth-3" href="wind-shear.html">风切变</a><a class="depth-3" href="runway-condition.html">跑道状况</a><a class="depth-3" href="remark-wind.html">备注风</a><a class="depth-3" href="trend-forecast.html">趋势预报</a><a class="depth-3" href="transition-level.html">过渡高度层</a><a class="depth-3" href="automatic-observation.html">自动观测</a><a class="depth-3" href="notams.html">通告格式</a><a class="depth-3" href="closing-statement.html">结束语</a><a class="depth-2" href="../contractions.html">自定义缩略语</a><a class="depth-3" href="../default-contractions.html">默认缩略语表</a><a class="depth-2" href="../sandbox.html">沙盒测试</a><a class="depth-2" href="../voice-packs.html">WAV 语音包</a><a class="depth-1" href="../../automatic-profile-updates.html">配置文件自动更新</a><a class="depth-1" href="../../websockets.html">WebSocket API</a><a class="depth-1" href="../../local-development.html">本地开发</a><a class="depth-0" href="../../../getting-help.html">获取帮助</a><a class="depth-0" href="../../../faq.html">常见问题</a><a class="depth-0" href="../../../privacy-policy.html">隐私与数据说明</a></nav></aside>
+<main><div class="eyebrow">CAN 用户指南 / 观测时间</div><article>
+<details class="toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_2">例行观测分钟</a></li>
+</ul>
+</div>
+</details><h1 id="_1">观测时间</h1>
+<p>在预设中使用 <code>[OBS_TIME]</code> 插入 METAR 观测时间。</p>
+<table>
+<thead>
+<tr>
+<th>内部变量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{time}</code></td>
+<td>完整时间，如 0153</td>
+</tr>
+<tr>
+<td><code>{hour}</code></td>
+<td>小时，如 01</td>
+</tr>
+<tr>
+<td><code>{minute}</code></td>
+<td>分钟，如 53</td>
+</tr>
+<tr>
+<td><code>{day}</code></td>
+<td>月中的日期，如 16</td>
+</tr>
+<tr>
+<td><code>{special}</code></td>
+<td>特别报告或不在例行分钟的报告输出 SPECIAL；文字和语音均可用</td>
+</tr>
+<tr>
+<td><code>{type}</code></td>
+<td>SPECI 或 METAR，仅文字可用</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">例行观测分钟</h2>
+<p><strong>Routine Observation Time</strong> 指定每小时正常发布的分钟，例如 <code>53</code>。一小时多次可写 <code>15,45</code>。</p>
+<p>SPECI 报告，或报文分钟不在此列表时，被视为特别更新，模板中的 <code>{special}</code> 会输出 SPECIAL。时间为 METAR 的 UTC 时间，不是本地时区。</p><h2 id="reference-images">操作截图参考</h2><p>以下为上游原版截图，保留英文标签。用于定位操作；品牌、登录字段与网络行为以本页 CAN 说明为准。</p><figure><img loading="lazy" src="../../../assets/images/Formatting_ObservationTime.png" alt="观测时间：原版界面操作参考 Formatting_ObservationTime.png"><figcaption>原版界面参考 · Formatting_ObservationTime.png</figcaption></figure>
+<div class="pager"><a href="../formatting.html">上一页：格式设置</a><a href="wind.html">下一页：地面风</a></div></article>
+<footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/client/atis-configuration/formatting/observation-time.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
+依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>
+<script>document.getElementById('nav-search').addEventListener('input',function(){const q=this.value.trim().toLocaleLowerCase();document.querySelectorAll('nav a').forEach(a=>a.hidden=!a.textContent.toLocaleLowerCase().includes(q));});</script>
+</body></html>

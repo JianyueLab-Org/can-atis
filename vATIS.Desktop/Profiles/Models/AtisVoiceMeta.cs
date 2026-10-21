@@ -15,10 +15,9 @@ namespace Vatsim.Vatis.Profiles.Models;
 public class AtisVoiceMeta
 {
     /// <summary>
-    /// Whether this build can synthesize a voice ATIS. CAN has no compatible text-to-speech endpoint, so a station
-    /// that has <see cref="UseTextToSpeech"/> saved from an older or imported profile is treated as recorded.
+    /// Whether this build supports the vATIS text-to-speech protocol. The speech service requires separate authentication.
     /// </summary>
-    public const bool TextToSpeechAvailable = false;
+    public const bool TextToSpeechAvailable = true;
 
     /// <summary>
     /// Gets or sets a value indicating whether text-to-speech should be used for ATIS voice configuration.
