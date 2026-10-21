@@ -24,13 +24,16 @@
 				<DockPanel>
 					<ScrollViewer
 						Theme="{StaticResource CustomTabControlScrollViewer}"
-						HorizontalScrollBarVisibility="Auto"
-						VerticalScrollBarVisibility="Disabled"
-						DockPanel.Dock="Top">
+						HorizontalScrollBarVisibility="Disabled"
+						VerticalScrollBarVisibility="Auto"
+						Width="150"
+						DockPanel.Dock="Left">
 						<ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}"/>
 					</ScrollViewer>
+					<!-- Tucked 1px under the tab column and drawn beneath it, so the selected tab, which has no
+					     right border, opens into the content pane. -->
 					<Border Name="PART_TabControlBorder"
-							Margin="0,-1,0,0"
+							Margin="-1,0,0,0"
 							ZIndex="-100"
 							BorderBrush="{TemplateBinding BorderBrush}"
 							BorderThickness="1"
@@ -127,11 +130,16 @@
 							</Style>
 						</RepeatButton.Styles>
 					</RepeatButton>
+					<!-- Range, viewport, offset and visibility (VerticalScrollBarVisibility) come from the templated
+					     ScrollViewer automatically; binding them here would override that wiring. -->
+					<ScrollBar Name="PART_VerticalScrollBar"
+							   Orientation="Vertical"
+							   DockPanel.Dock="Right"/>
 					<ScrollContentPresenter Name="PART_ContentPresenter"
-													CanHorizontallyScroll="True"
-													CanVerticallyScroll="False"
-													ContentTemplate="{TemplateBinding ContentTemplate}"
-													Offset="{TemplateBinding Offset, Mode=TwoWay}"/>
+															CanHorizontallyScroll="True"
+															CanVerticallyScroll="True"
+															ContentTemplate="{TemplateBinding ContentTemplate}"
+															Offset="{TemplateBinding Offset, Mode=TwoWay}"/>
 				</DockPanel>
 			</ControlTemplate>
 		</Setter>

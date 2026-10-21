@@ -193,23 +193,8 @@ public class NavDataRepository : INavDataRepository
     private static async Task<List<Airport>> LoadBundledAirports(string path)
     {
         await using var stream = File.OpenRead(path);
-        using var document = await JsonDocument.ParseAsync(stream);
-        var airports = new List<Airport>();
-        foreach (var property in document.RootElement.EnumerateObject())
-        {
-            var coordinates = property.Value;
-            if (coordinates.ValueKind != JsonValueKind.Array || coordinates.GetArrayLength() < 2)
-                continue;
-
-            airports.Add(new Airport
-            {
-                Id = property.Name,
-                Name = property.Name,
-                Latitude = coordinates[0].GetDouble(),
-                Longitude = coordinates[1].GetDouble()
-            });
-        }
-
-        return airports;
+        return await JsonSerializer.DeserializeAsync(
+            stream,
+            SourceGenerationContext.NewDefault.ListAirport) ?? [];
     }
 }

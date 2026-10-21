@@ -12,6 +12,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.ReactiveUI;
 using Serilog;
+using Vatsim.Vatis.Ui.Common;
 using Vatsim.Vatis.Ui.Controls.Notification;
 using Vatsim.Vatis.Ui.Extensions;
 using Vatsim.Vatis.Ui.ViewModels;
@@ -155,10 +156,28 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
     private void OnPointerPressed(object sender, PointerPressedEventArgs e)
     {
+        if (BorderlessWindowResize.TryBeginResizeDrag(this, e))
+            return;
+
         if (e.Source is Border or TextBlock && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             BeginMoveDrag(e);
         }
+    }
+
+    private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        BorderlessWindowResize.TryBeginResizeDrag(this, e);
+    }
+
+    private void OnWindowPointerMoved(object? sender, PointerEventArgs e)
+    {
+        BorderlessWindowResize.UpdateCursor(this, e);
+    }
+
+    private void OnWindowPointerExited(object? sender, PointerEventArgs e)
+    {
+        BorderlessWindowResize.ResetCursor(this);
     }
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)

@@ -20,7 +20,7 @@
 		<Setter Property="FontFamily" Value="{StaticResource Monospace}"/>
 		<Setter Property="FocusAdorner" Value="{x:Null}"/>
 		<!--Prevent double left/right border-->
-		<Setter Property="Margin" Value="-1,0,0,0"/>
+		<Setter Property="Margin" Value="0,-1,0,0"/>
 
 		<Setter Property="Template">
 			<ControlTemplate>
@@ -47,7 +47,7 @@
 								   Text="{Binding AtisLetter, DataType=vm:AtisStationViewModel}"
 								   HorizontalAlignment="Left"
 								   IsVisible="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource AtisLetterVisibleConverter}}"
-								   Margin="5 0 0 0">
+								   Margin="8 0 0 0">
 							<Interaction.Behaviors>
 								<behaviors:BlinkingTextBehavior IsBlinking="{Binding IsNewAtis, DataType=vm:AtisStationViewModel, Mode=TwoWay}" BlinkOffColor="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource ConnectionStatusToBrush}, ConverterParameter={x:Static network:NetworkConnectionStatus.Connected}}" />
 							</Interaction.Behaviors>
@@ -63,14 +63,14 @@
 			<Setter Property="Padding" Value="0,0,0,1"/>
 		</Style>
 
-		<!-- Remove bottom border of selected tab -->
+		<!-- Remove right border of selected tab -->
 		<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
-			<Setter Property="BorderThickness" Value="1,1,1,0" />
+			<Setter Property="BorderThickness" Value="1,1,0,1" />
 		</Style>
 
-		<!-- Add positive left border to first tab -->
+		<!-- Add positive top border to first tab -->
 		<Style Selector="^:nth-child(1) /template/ Border#PART_LayoutRoot">
-			<Setter Property="Margin" Value="1,0,0,0" />
+			<Setter Property="Margin" Value="0,1,0,0" />
 		</Style>
 	</ControlTheme>
 </ResourceDictionary>

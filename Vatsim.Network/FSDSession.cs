@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Vatsim.Network.PDU;
@@ -9,9 +8,6 @@ namespace Vatsim.Network;
 
 public class FsdSession
 {
-    private const int ServerAuthChallengeInterval = 60000;
-    private const int ServerAuthChallengeResponseWindow = 30000;
-
     public event EventHandler<NetworkEventArgs> NetworkConnected = delegate { };
     public event EventHandler<NetworkEventArgs> NetworkDisconnected = delegate { };
     public event EventHandler<NetworkEventArgs> NetworkConnectionFailed = delegate { };
@@ -69,43 +65,33 @@ public class FsdSession
     private Socket? _clientSocket;
     private AsyncCallback? _incomingDataCallBack;
     private string _partialPacket = "";
-    private string _clientAuthSessionKey = "";
-    private string _clientAuthChallengeKey = "";
     private readonly object? _userData;
     private SynchronizationContext? _syncContext;
-    private bool _challengeServer;
-    private string _serverAuthSessionKey = string.Empty;
-    private string _serverAuthChallengeKey = string.Empty;
-    private string _lastServerAuthChallenge = string.Empty;
-    private Timer? _serverAuthTimer;
-    private string? _currentCallsign;
-    private readonly IClientAuth _clientAuth;
 
     public bool Connected => _clientSocket?.Connected ?? false;
     public bool IgnoreUnknownPackets { get; init; }
     public ClientProperties ClientProperties { get; set; }
 
-    private FsdSession(IClientAuth clientAuth, ClientProperties properties, object? userData,
+    private FsdSession(ClientProperties properties, object? userData,
         SynchronizationContext? syncContext)
     {
         ClientProperties = properties;
         _userData = userData;
         _syncContext = syncContext;
-        _clientAuth = clientAuth;
     }
 
-    public FsdSession(IClientAuth clientAuth, ClientProperties properties, object userData)
-        : this(clientAuth, properties, userData, null)
+    public FsdSession(ClientProperties properties, object userData)
+        : this(properties, userData, null)
     {
     }
 
-    public FsdSession(IClientAuth clientAuth, ClientProperties properties, SynchronizationContext syncContext)
-        : this(clientAuth, properties, null, syncContext)
+    public FsdSession(ClientProperties properties, SynchronizationContext syncContext)
+        : this(properties, null, syncContext)
     {
     }
 
-    public FsdSession(IClientAuth clientAuth, ClientProperties properties)
-        : this(clientAuth, properties, null, null)
+    public FsdSession(ClientProperties properties)
+        : this(properties, null, null)
     {
     }
 
@@ -909,9 +895,8 @@ public class FsdSession
         _syncContext = context;
     }
 
-    public void Connect(string address, int port, bool challengeServer = true)
+    public void Connect(string address, int port)
     {
-        _challengeServer = challengeServer;
         try
         {
             _clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -981,10 +966,8 @@ public class FsdSession
     /// <see cref="NetworkDisconnected"/>. Listeners that react to that event by disconnecting would otherwise close
     /// the new connection as well.
     /// </summary>
-    public void ChangeServer(string address, int port, bool challengeServer = true)
+    public void ChangeServer(string address, int port)
     {
-        ResetServerAuthSession();
-
         var oldSocket = _clientSocket;
         _clientSocket = null;
         try
@@ -995,12 +978,11 @@ public class FsdSession
         catch (ObjectDisposedException) { }
         catch (SocketException) { }
 
-        Connect(address, port, challengeServer);
+        Connect(address, port);
     }
 
     public void Disconnect()
     {
-        ResetServerAuthSession();
         if (_clientSocket != null)
         {
             try
@@ -1055,87 +1037,9 @@ public class FsdSession
 
     public void SendPdu(PDUBase pdu)
     {
-        if (_challengeServer)
-        {
-            if (pdu is PDUClientIdentification identification && string.IsNullOrEmpty(identification.InitialChallenge))
-            {
-                var initialChallenge = _clientAuth.GenerateAuthChallenge();
-                _serverAuthSessionKey = _clientAuth.GenerateAuthResponse(initialChallenge);
-                identification.InitialChallenge = initialChallenge;
-            }
-
-            if (pdu is PDUAddPilot { ProtocolRevision: >= ProtocolRevision.VatsimAuth } or PDUAddATC
-                {
-                    ProtocolRevision: >= ProtocolRevision.VatsimAuth
-                })
-            {
-                _currentCallsign = pdu.From;
-                _serverAuthTimer = new Timer(CheckServerAuth);
-                _serverAuthTimer.Change(ServerAuthChallengeResponseWindow, Timeout.Infinite);
-            }
-        }
         SendData(pdu.Serialize() + PDUBase.PACKET_DELIMITER);
     }
 
-    private void CheckServerAuth(object? state)
-    {
-        // Check if this is the first auth check. If so, we generate the session key and send a challenge.
-        if (string.IsNullOrEmpty(_serverAuthChallengeKey))
-        {
-            _serverAuthChallengeKey = _serverAuthSessionKey;
-            ChallengeServer();
-            return;
-        }
-
-        // Check if we have a pending auth challenge. If we do, then the server has failed to respond to
-        // the challenge in time, so we disconnect.
-        if (!string.IsNullOrEmpty(_lastServerAuthChallenge))
-        {
-            RaiseNetworkError("The server has failed to respond to the authentication challenge.");
-            Disconnect();
-        }
-
-        // If none of the above, challenge the server.
-        ChallengeServer();
-    }
-
-    private void ChallengeServer()
-    {
-        ArgumentNullException.ThrowIfNull(_currentCallsign);
-
-        _lastServerAuthChallenge = _clientAuth.GenerateAuthChallenge();
-        PDUAuthChallenge pdu = new PDUAuthChallenge(_currentCallsign, PDUBase.SERVER_CALLSIGN, _lastServerAuthChallenge);
-        SendPdu(pdu);
-        _serverAuthTimer?.Change(ServerAuthChallengeResponseWindow, Timeout.Infinite);
-    }
-
-    private void CheckServerAuthChallengeResponse(string response)
-    {
-        if (_serverAuthTimer == null)
-        {
-            return;
-        }
-        var expectedResponse = _clientAuth.GenerateAuthResponse(_lastServerAuthChallenge, _serverAuthChallengeKey);
-        if (response != expectedResponse)
-        {
-            RaiseNetworkError("The server has failed to respond correctly to the authentication challenge.");
-            Disconnect();
-        }
-        else
-        {
-            _lastServerAuthChallenge = string.Empty;
-            _serverAuthChallengeKey = GenerateMd5Digest(_serverAuthSessionKey + response);
-            _serverAuthTimer.Change(ServerAuthChallengeInterval, Timeout.Infinite);
-        }
-    }
-
-    private void ResetServerAuthSession()
-    {
-        _serverAuthTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-        _serverAuthSessionKey = string.Empty;
-        _serverAuthChallengeKey = string.Empty;
-        _lastServerAuthChallenge = string.Empty;
-    }
 
     private class SocketPacket
     {
@@ -1305,12 +1209,7 @@ public class FsdSession
                             case "$DI":
                                 {
                                     PDUServerIdentification pdu = PDUServerIdentification.Parse(fields);
-                                    if (_clientAuth.ClientId != 0)
-                                    {
-                                        _clientAuthSessionKey = _clientAuth.GenerateAuthResponse(pdu.InitialChallengeKey);
-                                        _clientAuthChallengeKey = _clientAuthSessionKey;
-                                    }
-                                    RaiseServerIdentificationReceived(pdu);
+                                     RaiseServerIdentificationReceived(pdu);
                                     break;
                                 }
                             case "$ID":
@@ -1505,30 +1404,12 @@ public class FsdSession
                                 RaiseClientQueryResponseReceived(PDUClientQueryResponse.Parse(fields));
                                 break;
                             case "$ZC":
-                                if (_clientAuth.ClientId != 0)
-                                {
-                                    PDUAuthChallenge pdu = PDUAuthChallenge.Parse(fields);
-                                    var response = _clientAuth.GenerateAuthResponse(pdu.Challenge, _clientAuthChallengeKey);
-                                    _clientAuthChallengeKey = GenerateMd5Digest(_clientAuthSessionKey + response);
-                                    PDUAuthResponse responsePdu = new PDUAuthResponse(pdu.To, pdu.From, response);
-                                    SendPdu(responsePdu);
-                                }
-                                else
-                                {
-                                    RaiseAuthChallengeReceived(PDUAuthChallenge.Parse(fields));
-                                }
+                                 RaiseAuthChallengeReceived(PDUAuthChallenge.Parse(fields));
                                 break;
                             case "$ZR":
                                 {
                                     PDUAuthResponse pdu = PDUAuthResponse.Parse(fields);
-                                    if (_challengeServer && _clientAuth.ClientId != 0 && !string.IsNullOrEmpty(_serverAuthChallengeKey) && !string.IsNullOrEmpty(_lastServerAuthChallenge))
-                                    {
-                                        CheckServerAuthChallengeResponse(pdu.Response);
-                                    }
-                                    else
-                                    {
-                                        RaiseAuthResponseReceived(pdu);
-                                    }
+                                     RaiseAuthResponseReceived(pdu);
                                     break;
                                 }
                             case "$!!":
@@ -1613,15 +1494,4 @@ public class FsdSession
         }
     }
 
-    private static string GenerateMd5Digest(string value)
-    {
-        var data = Encoding.ASCII.GetBytes(value);
-        var result = MD5.HashData(data);
-        StringBuilder sb = new StringBuilder();
-        foreach (var t in result)
-        {
-            sb.Append(t.ToString("x2"));
-        }
-        return sb.ToString();
-    }
 }

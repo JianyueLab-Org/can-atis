@@ -245,16 +245,13 @@ public class App : Application
                     sessionManager.Run();
                 }
 
-                try
-                {
-                    NativeAudio.Initialize();
-                }
-                catch (DllNotFoundException ex)
+                if (!NativeAudio.Initialize())
                 {
                     // The native audio backend is optional in a source/Debug build.
                     // CAN FSD/profile configuration can still be opened without it;
-                    // a packaged voice build must include NativeAudio.dll.
-                    Log.Warning(ex, "Native audio backend is unavailable; continuing without local audio initialization.");
+                    // a packaged voice build must include NativeAudio.dll (the publish
+                    // target fails without it). Every NativeAudio call is a no-op from here on.
+                    Log.Warning("Native audio backend is unavailable; local audio is disabled.");
                 }
 
                 base.OnFrameworkInitializationCompleted();
@@ -448,11 +445,9 @@ public class App : Application
 
     private async Task UpdateAvailableVoicesAsync()
     {
-        if (_serviceProvider != null)
-        {
-            EventBus.Instance.Publish(new StartupStatusChanged("Updating available voices..."));
-            await _serviceProvider.GetService<ITextToSpeechService>().Initialize();
-        }
+        // Text-to-speech is not connected for the CAN client. Keep this startup step
+        // as a no-op so the rest of the startup pipeline remains unchanged.
+        await Task.CompletedTask;
     }
 
     private async Task UpdateNavDataAsync()

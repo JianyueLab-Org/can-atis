@@ -15,6 +15,14 @@ public static class NativeAudio
 {
     private const string LibNativeAudio = "NativeAudio";
     private static nint s_handle;
+    private static bool s_isAvailable;
+
+    /// <summary>
+    /// Gets a value indicating whether the native audio library loaded and initialized. When it is false every
+    /// call below is a no-op that returns <c>false</c>, so a missing or broken NativeAudio library disables local
+    /// audio instead of throwing from whichever call happens to reach it first.
+    /// </summary>
+    public static bool IsAvailable => s_isAvailable;
 
     /// <summary>
     /// Represents a callback method for handling audio API enumerations.
@@ -41,7 +49,21 @@ public static class NativeAudio
     /// <summary>
     /// Initializes the native audio functionality for the application by setting up internal resources.
     /// </summary>
-    public static void Initialize() => s_handle = Internal_Initialize();
+    /// <returns><c>true</c> if the native library loaded and returned a valid handle; otherwise, <c>false</c>.</returns>
+    public static bool Initialize()
+    {
+        try
+        {
+            s_handle = Internal_Initialize();
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or BadImageFormatException or EntryPointNotFoundException)
+        {
+            s_handle = nint.Zero;
+        }
+
+        s_isAvailable = s_handle != nint.Zero;
+        return s_isAvailable;
+    }
 
     /// <summary>
     /// Retrieves the list of available audio APIs by invoking a provided callback for each API.
@@ -50,7 +72,10 @@ public static class NativeAudio
     /// A callback method that is invoked for each audio API.
     /// The callback receives the ID of the audio API and a pointer to a string containing the audio API information.
     /// </param>
-    public static void GetAudioApis(AudioApiCallback callback) => Internal_GetAudioApis(s_handle, callback);
+    public static void GetAudioApis(AudioApiCallback callback)
+    {
+        if (s_isAvailable) Internal_GetAudioApis(s_handle, callback);
+    }
 
     /// <summary>
     /// Sets the active audio API used for audio capture and playback.
@@ -58,7 +83,10 @@ public static class NativeAudio
     /// <param name="api">
     /// The identifier of the audio API to be set. Defaults to 0 if not specified.
     /// </param>
-    public static void SetAudioApi(uint api = 0) => Internal_SetAudioApi(s_handle, api);
+    public static void SetAudioApi(uint api = 0)
+    {
+        if (s_isAvailable) Internal_SetAudioApi(s_handle, api);
+    }
 
     /// <summary>
     /// Retrieves the list of available audio capture devices through the specified callback.
@@ -70,8 +98,10 @@ public static class NativeAudio
     /// <param name="api">
     /// The audio API to query devices from. Defaults to 0, which uses the system default.
     /// </param>
-    public static void GetCaptureDevices(AudioInterfaceCallback callback, uint api = 0) =>
-        Internal_GetCaptureDevices(s_handle, api, callback);
+    public static void GetCaptureDevices(AudioInterfaceCallback callback, uint api = 0)
+    {
+        if (s_isAvailable) Internal_GetCaptureDevices(s_handle, api, callback);
+    }
 
     /// <summary>
     /// Sets the capture device to the specified device name for audio input.
@@ -79,15 +109,20 @@ public static class NativeAudio
     /// <param name="deviceName">
     /// The name of the capture device to be set.
     /// </param>
-    public static void SetCaptureDevice(string deviceName) => Internal_SetCaptureDevice(s_handle, deviceName);
+    public static void SetCaptureDevice(string deviceName)
+    {
+        if (s_isAvailable) Internal_SetCaptureDevice(s_handle, deviceName);
+    }
 
     /// <summary>
     /// Retrieves the available playback devices using the specified audio API.
     /// </summary>
     /// <param name="callback">The callback to invoke for the available devices.</param>
     /// <param name="api">The audio API to use for retrieving the playback devices. Defaults to 0.</param>
-    public static void GetPlaybackDevices(AudioInterfaceCallback callback, uint api = 0) =>
-        Internal_GetPlaybackDevices(s_handle, api, callback);
+    public static void GetPlaybackDevices(AudioInterfaceCallback callback, uint api = 0)
+    {
+        if (s_isAvailable) Internal_GetPlaybackDevices(s_handle, api, callback);
+    }
 
     /// <summary>
     /// Sets the playback device for audio output.
@@ -95,7 +130,10 @@ public static class NativeAudio
     /// <param name="deviceName">
     /// The name of the playback device to be used.
     /// </param>
-    public static void SetPlaybackDevice(string deviceName) => Internal_SetPlaybackDevice(s_handle, deviceName);
+    public static void SetPlaybackDevice(string deviceName)
+    {
+        if (s_isAvailable) Internal_SetPlaybackDevice(s_handle, deviceName);
+    }
 
     /// <summary>
     /// Starts recording audio using the specified input device.
@@ -104,7 +142,8 @@ public static class NativeAudio
     /// <returns>
     /// True if recording started successfully; otherwise, false.
     /// </returns>
-    public static bool StartRecording(string deviceName) => Internal_StartRecording(s_handle, deviceName);
+    public static bool StartRecording(string deviceName) =>
+        s_isAvailable && Internal_StartRecording(s_handle, deviceName);
 
     /// <summary>
     /// Stops the audio recording process and provides the recorded audio data using the specified callback.
@@ -112,7 +151,10 @@ public static class NativeAudio
     /// <param name="callback">
     /// A delegate that processes the recorded audio data. The delegate receives a pointer to the audio data and the size of the data.
     /// </param>
-    public static void StopRecording(AudioDataCallback callback) => Internal_StopRecording(s_handle, callback);
+    public static void StopRecording(AudioDataCallback callback)
+    {
+        if (s_isAvailable) Internal_StopRecording(s_handle, callback);
+    }
 
     /// <summary>
     /// Starts the playback of an audio buffer using the initialized audio system.
@@ -125,6 +167,9 @@ public static class NativeAudio
     /// </returns>
     public static bool StartBufferPlayback(byte[] buffer, int bufferSize, string? deviceName = null)
     {
+        if (!s_isAvailable)
+            return false;
+
         var bufferPtr = GetAudioDataPointer(buffer);
         var result = Internal_StartBufferPlayback(s_handle, bufferPtr, bufferSize, deviceName);
         DestroyDataPointer(bufferPtr);
@@ -137,31 +182,37 @@ public static class NativeAudio
     /// <returns>
     /// True if the buffer playback was stopped successfully; otherwise, false.
     /// </returns>
-    public static bool StopBufferPlayback() => Internal_StopBufferPlayback(s_handle);
+    public static bool StopBufferPlayback() => s_isAvailable && Internal_StopBufferPlayback(s_handle);
 
     /// <summary>
     /// Starts audio playback for the specified device.
     /// </summary>
     /// <param name="deviceName">The name of the playback audio device to be used.</param>
     /// <returns>True if playback starts successfully; otherwise, false.</returns>
-    public static bool StartPlayback(string deviceName) => Internal_StartPlayback(s_handle, deviceName);
+    public static bool StartPlayback(string deviceName) => s_isAvailable && Internal_StartPlayback(s_handle, deviceName);
 
     /// <summary>
     /// Stops the audio playback and releases associated resources.
     /// </summary>
     /// <returns>True if the playback was successfully stopped; otherwise, false.</returns>
-    public static bool StopPlayback() => Internal_StopPlayback(s_handle);
+    public static bool StopPlayback() => s_isAvailable && Internal_StopPlayback(s_handle);
 
     /// <summary>
     /// Releases and cleans up all currently initialized audio devices.
     /// </summary>
-    public static void DestroyDevices() => Internal_DestroyDevices(s_handle);
+    public static void DestroyDevices()
+    {
+        if (s_isAvailable) Internal_DestroyDevices(s_handle);
+    }
 
     /// <summary>
     /// Emits a specified sound using the native audio system.
     /// </summary>
     /// <param name="sound">The type of <see cref="SoundType">sound</see> to be played.</param>
-    public static void EmitSound(SoundType sound) => Internal_EmitSound(s_handle, sound);
+    public static void EmitSound(SoundType sound)
+    {
+        if (s_isAvailable) Internal_EmitSound(s_handle, sound);
+    }
 
     private static IntPtr GetAudioDataPointer(byte[] audioData)
     {
@@ -191,17 +242,17 @@ public static class NativeAudio
     private static extern void Internal_GetCaptureDevices(nint handle, uint audioApi, AudioInterfaceCallback callback);
 
     [DllImport(LibNativeAudio, EntryPoint = "SetCaptureDevice")]
-    private static extern void Internal_SetCaptureDevice(nint handle, [MarshalAs(UnmanagedType.LPStr)] string deviceName);
+    private static extern void Internal_SetCaptureDevice(nint handle, [MarshalAs(UnmanagedType.LPUTF8Str)] string deviceName);
 
     [DllImport(LibNativeAudio, EntryPoint = "GetPlaybackDevices")]
     private static extern void Internal_GetPlaybackDevices(nint handle, uint audioApi, AudioInterfaceCallback callback);
 
     [DllImport(LibNativeAudio, EntryPoint = "SetPlaybackDevice")]
-    private static extern void Internal_SetPlaybackDevice(nint handle, [MarshalAs(UnmanagedType.LPStr)] string deviceName);
+    private static extern void Internal_SetPlaybackDevice(nint handle, [MarshalAs(UnmanagedType.LPUTF8Str)] string deviceName);
 
     [DllImport(LibNativeAudio, EntryPoint = "StartRecording")]
     [return: MarshalAs(UnmanagedType.I1)]
-    private static extern bool Internal_StartRecording(nint handle, [MarshalAs(UnmanagedType.LPStr)] string deviceName);
+    private static extern bool Internal_StartRecording(nint handle, [MarshalAs(UnmanagedType.LPUTF8Str)] string deviceName);
 
     [DllImport(LibNativeAudio, EntryPoint = "StopRecording")]
     private static extern void Internal_StopRecording(nint handle, AudioDataCallback callback);
@@ -209,7 +260,7 @@ public static class NativeAudio
     [DllImport(LibNativeAudio, EntryPoint = "StartBufferPlayback")]
     [return: MarshalAs(UnmanagedType.I1)]
     private static extern bool Internal_StartBufferPlayback(nint handle, IntPtr buffer, int bufferSize,
-        [MarshalAs(UnmanagedType.LPStr)] string? deviceName);
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string? deviceName);
 
     [DllImport(LibNativeAudio, EntryPoint = "StopBufferPlayback")]
     [return: MarshalAs(UnmanagedType.I1)]
@@ -217,7 +268,7 @@ public static class NativeAudio
 
     [DllImport(LibNativeAudio, EntryPoint = "StartPlayback")]
     [return: MarshalAs(UnmanagedType.I1)]
-    private static extern bool Internal_StartPlayback(nint handle, [MarshalAs(UnmanagedType.LPStr)] string deviceName);
+    private static extern bool Internal_StartPlayback(nint handle, [MarshalAs(UnmanagedType.LPUTF8Str)] string deviceName);
 
     [DllImport(LibNativeAudio, EntryPoint = "StopPlayback")]
     [return: MarshalAs(UnmanagedType.I1)]

@@ -366,7 +366,7 @@ public class GeneralConfigViewModel : ReactiveViewModelBase, IDisposable
         CodeRangeHigh = '\0';
         UseDecimalTerminology = false;
         RandomizeAtisLetterOnConnect = false;
-        UseTextToSpeech = true;
+        UseTextToSpeech = false;
         UseWavPack = false;
         SelectedWavPack = null;
         IdsEndpoint = null;
@@ -587,7 +587,8 @@ public class GeneralConfigViewModel : ReactiveViewModelBase, IDisposable
         UseDecimalTerminology = station.UseDecimalTerminology;
         RandomizeAtisLetterOnConnect = station.RandomizeAtisLetterOnConnect;
         IdsEndpoint = station.IdsEndpoint;
-        UseTextToSpeech = station.AtisVoice.UseTextToSpeech;
+        // CAN does not provide a compatible authenticated TTS endpoint.
+        UseTextToSpeech = false;
         UseWavPack = station.AtisVoice.UseWavPack;
         _wavPackId = station.AtisVoice.WavPackId;
         _wavPackPath = station.AtisVoice.WavPackPath;

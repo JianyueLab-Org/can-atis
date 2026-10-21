@@ -42,7 +42,10 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<TargetPath>opus.dll</TargetPath>
 		</ContentWithTargetPath>
-		<None Include="..\..\atis\airports.json" CopyToOutputDirectory="PreserveNewest" Link="Data\airports.json" />
+		<ContentWithTargetPath Include="Data\airports.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>Data\airports.json</TargetPath>
+		</ContentWithTargetPath>
 	</ItemGroup>
 
 	<!-- Select the native library by target runtime so cross-compiling (e.g. publishing osx-* from Linux) picks the right one; fall back to the host OS when no RID is given. -->
@@ -61,6 +64,13 @@
 			<TargetPath>NativeAudio.dll</TargetPath>
 		</ContentWithTargetPath>
 	</ItemGroup>
+
+	<!-- A source/Debug build may run without NativeAudio.dll (local audio is then disabled), but a published package
+	     must not: it would start normally and simply have no audio, and nothing in the build would say so. -->
+	<Target Name="RequireNativeAudioForPublish" BeforeTargets="PrepareForPublish"
+			Condition="'$(NativeAudioOs)' == 'win' And !Exists('.\Voice\Audio\Native\win\NativeAudio.dll')">
+		<Error Text="Voice\Audio\Native\win\NativeAudio.dll is missing. Build NativeAudio first (see README.md) before publishing; a package without it has no audio." />
+	</Target>
 
 	<ItemGroup Condition="'$(NativeAudioOs)' == 'linux'">
 		<ContentWithTargetPath Include=".\Voice\Audio\Native\lin\libNativeAudio.so">

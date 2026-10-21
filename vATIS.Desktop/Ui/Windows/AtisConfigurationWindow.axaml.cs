@@ -11,6 +11,7 @@ using Avalonia.ReactiveUI;
 using ReactiveUI;
 using Serilog;
 using Vatsim.Vatis.Profiles.Models;
+using Vatsim.Vatis.Ui.Common;
 using Vatsim.Vatis.Ui.Dialogs.MessageBox;
 using Vatsim.Vatis.Ui.ViewModels;
 
@@ -104,9 +105,29 @@ public partial class AtisConfigurationWindow : ReactiveWindow<AtisConfigurationW
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        if (BorderlessWindowResize.TryBeginResizeDrag(this, e))
+        {
+            return;
+        }
+
         if (e.Source is Border { Name: "TitleBar" } && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             BeginMoveDrag(e);
         }
+    }
+
+    private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        BorderlessWindowResize.TryBeginResizeDrag(this, e);
+    }
+
+    private void OnWindowPointerMoved(object? sender, PointerEventArgs e)
+    {
+        BorderlessWindowResize.UpdateCursor(this, e);
+    }
+
+    private void OnWindowPointerExited(object? sender, PointerEventArgs e)
+    {
+        BorderlessWindowResize.ResetCursor(this);
     }
 }

@@ -120,11 +120,13 @@ std::string AudioContext::GetDeviceId(const ma_device_id& deviceId, unsigned int
 			return "";
 		}
 
-		// Allocate a buffer to hold the converted string
-		std::string result(length - 1, '\0'); // Length includes the null terminator, which we don't need
+		// Allocate a buffer to hold the converted UTF-8 string. The native API
+		// passes device names to managed code as UTF-8, including non-ASCII names.
+		std::string result(static_cast<size_t>(length), '\0'); // Length includes the null terminator.
 
 		// Perform the conversion
 		WideCharToMultiByte(CP_UTF8, 0, deviceId.wasapi, -1, &result[0], length, nullptr, nullptr);
+		result.resize(static_cast<size_t>(length - 1));
 		return result;
 #endif // WIN32
 	}

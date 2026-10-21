@@ -120,10 +120,10 @@ public class VoiceRecordAtisDialogViewModel : ReactiveViewModelBase, IDisposable
 
         NativeAudio.GetCaptureDevices((idPtr, namePtr, _) =>
         {
-            var id = Marshal.PtrToStringAnsi(idPtr);
+            var id = Marshal.PtrToStringUTF8(idPtr);
             if (id != null)
             {
-                var name = Marshal.PtrToStringAnsi(namePtr);
+                var name = Marshal.PtrToStringUTF8(namePtr);
                 if (name != null)
                 {
                     if (name == appConfig.MicrophoneDevice)
@@ -138,10 +138,10 @@ public class VoiceRecordAtisDialogViewModel : ReactiveViewModelBase, IDisposable
 
         NativeAudio.GetPlaybackDevices((idPtr, namePtr, _) =>
         {
-            var id = Marshal.PtrToStringAnsi(idPtr);
+            var id = Marshal.PtrToStringUTF8(idPtr);
             if (id != null)
             {
-                var name = Marshal.PtrToStringAnsi(namePtr);
+                var name = Marshal.PtrToStringUTF8(namePtr);
                 if (name != null)
                 {
                     if (name == appConfig.PlaybackDevice)

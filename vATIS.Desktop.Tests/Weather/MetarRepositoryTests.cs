@@ -165,6 +165,14 @@ public class MetarRepositoryTests
 
         public string DigitalAtisApiUrl => string.Empty;
 
+        public string FsdHost => string.Empty;
+
+        public int FsdPort => 0;
+
+        public string AudioHost => string.Empty;
+
+        public int AudioPort => 0;
+
         public Task Initialize() => Task.CompletedTask;
     }
 

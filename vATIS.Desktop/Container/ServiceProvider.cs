@@ -5,7 +5,6 @@
 
 using System;
 using Jab;
-using Vatsim.Network;
 using Vatsim.Vatis.Atis;
 using Vatsim.Vatis.Config;
 using Vatsim.Vatis.Container.Factory;
@@ -51,7 +50,6 @@ namespace Vatsim.Vatis.Container;
 [Singleton(typeof(IWindowLocationService), typeof(WindowLocationService))]
 [Singleton(typeof(IProfileRepository), typeof(ProfileRepository))]
 [Singleton(typeof(IWebsocketService), typeof(WebsocketService))]
-[Singleton(typeof(IClientAuth), typeof(ClientAuth))]
 [Singleton(typeof(IDatisTextProcessor), typeof(DatisTextProcessor))]
 [Singleton<IDatisRepository>(Factory = nameof(CreateDatisRepository))]
 [Singleton<IMetarRepository>(Factory = nameof(CreateMetarRepository))]
