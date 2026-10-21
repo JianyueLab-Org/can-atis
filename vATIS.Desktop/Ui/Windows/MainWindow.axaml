@@ -4,15 +4,20 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:controls="using:Vatsim.Vatis.Ui.Controls"
 		xmlns:components="using:Vatsim.Vatis.Ui.Components"
-		xmlns:vm="using:Vatsim.Vatis.Ui.ViewModels"
+        xmlns:vm="using:Vatsim.Vatis.Ui.ViewModels"
 		mc:Ignorable="d"
         x:Class="Vatsim.Vatis.Ui.Windows.MainWindow"
         Height="560"
         Width="1120"
+        MinHeight="420"
+        MinWidth="760"
         SystemDecorations="None"
 		WindowStartupLocation="CenterScreen"
         TransparencyLevelHint="Transparent"
-		CanResize="False"
+		CanResize="True"
+        PointerPressed="OnWindowPointerPressed"
+        PointerMoved="OnWindowPointerMoved"
+        PointerExited="OnWindowPointerExited"
         Background="Transparent"
         Title="ATIS for CAN"
 		Icon="/Assets/MainIcon.ico"
@@ -22,7 +27,7 @@
 			BorderThickness="1"
             Background="#202637"
 			ClipToBounds="True">
-		<Grid RowDefinitions="45,*" ColumnDefinitions="1*,1*" ClipToBounds="True">
+		<Grid RowDefinitions="45,*" ColumnDefinitions="150,*" ClipToBounds="True">
 			<Grid x:Name="Overlay" Grid.ColumnSpan="2" Grid.RowSpan="2" ZIndex="100" IsVisible="{Binding ShowOverlay, DataType=vm:MainWindowViewModel, FallbackValue=False}">
 				<Border Background="#000000" Opacity="0.80"/>
 			</Grid>
@@ -47,7 +52,12 @@
 					</StackPanel>
 				</Grid>
 			</Border>
-			<controls:CustomTabControl Name="AtisStations" Margin="10" Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" IsVisible="{Binding AtisStations.Count, DataType=vm:MainWindowViewModel, FallbackValue=False}" ItemsSource="{Binding AtisStations, DataType=vm:MainWindowViewModel}" SelectedIndex="{Binding SelectedTabIndex, DataType=vm:MainWindowViewModel}">
+            <controls:CustomTabControl Name="AtisStations" Margin="10" Grid.Row="1" Grid.ColumnSpan="2" IsVisible="{Binding AtisStations.Count, DataType=vm:MainWindowViewModel, FallbackValue=False}" ItemsSource="{Binding AtisStations, DataType=vm:MainWindowViewModel}" SelectedIndex="{Binding SelectedTabIndex, DataType=vm:MainWindowViewModel}">
+				<controls:CustomTabControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<StackPanel Orientation="Vertical" />
+					</ItemsPanelTemplate>
+				</controls:CustomTabControl.ItemsPanel>
 				<controls:CustomTabControl.ItemContainerTheme>
 					<ControlTheme TargetType="{x:Type controls:CustomTabItem}" BasedOn="{StaticResource {x:Type controls:CustomTabItem}}"/>
 				</controls:CustomTabControl.ItemContainerTheme>
@@ -57,7 +67,7 @@
 					</DataTemplate>
 				</TabControl.ContentTemplate>
 			</controls:CustomTabControl>
-			<Border Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" IsVisible="{Binding !AtisStations.Count, DataType=vm:MainWindowViewModel, FallbackValue=True}" Margin="10" CornerRadius="4" BorderBrush="#646464" BorderThickness="1">
+            <Border Grid.Row="1" Grid.ColumnSpan="2" IsVisible="{Binding !AtisStations.Count, DataType=vm:MainWindowViewModel, FallbackValue=True}" Margin="10" CornerRadius="4" BorderBrush="#646464" BorderThickness="1">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
                     <TextBlock Text="CAN 当前没有配置通播席位" Foreground="#E6E8F0" FontSize="24" HorizontalAlignment="Center"/>
                     <TextBlock Text="请打开“通播配置”创建席位，或从 CAN 配置文件导入。" Foreground="#8B90A4" FontSize="14" HorizontalAlignment="Center"/>

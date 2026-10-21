@@ -68,11 +68,9 @@ public class NetworkConnection : INetworkConnection, IDisposable
     /// <param name="metarRepository">The METAR repository for weather data integration.</param>
     /// <param name="downloader">The downloader used for fetching remote resources.</param>
     /// <param name="navDataRepository">The navigation data repository to retrieve airport data.</param>
-    /// <param name="clientAuth">The client authentication manager.</param>
     public NetworkConnection(AtisStation station, IAppConfig appConfig, IAuthTokenManager authTokenManager,
         IAppConfigurationProvider appConfigProvider,
-        IMetarRepository metarRepository, IDownloader downloader, INavDataRepository navDataRepository,
-        IClientAuth clientAuth)
+        IMetarRepository metarRepository, IDownloader downloader, INavDataRepository navDataRepository)
     {
         ArgumentNullException.ThrowIfNull(station);
 
@@ -106,7 +104,7 @@ public class NetworkConnection : INetworkConnection, IDisposable
         _fsdPositionUpdateTimer.Interval = 15000; // 15 seconds
         _fsdPositionUpdateTimer.Elapsed += OnFsdPositionUpdateTimerElapsed;
 
-        _fsdSession = new FsdSession(clientAuth, _clientProperties, SynchronizationContext.Current ?? throw new InvalidOperationException())
+        _fsdSession = new FsdSession(_clientProperties, SynchronizationContext.Current ?? throw new InvalidOperationException())
         {
             IgnoreUnknownPackets = true
         };
@@ -189,7 +187,7 @@ public class NetworkConnection : INetworkConnection, IDisposable
         ArgumentNullException.ThrowIfNull(_atisStation);
 
         _fsdSession.Connect(serverAddress ?? _appConfigurationProvider.FsdHost,
-            _appConfigurationProvider.FsdPort, challengeServer: false);
+            _appConfigurationProvider.FsdPort);
         _previousMetar = "";
 
         ArgumentNullException.ThrowIfNull(_atisStation.Identifier);
@@ -526,8 +524,6 @@ public class NetworkConnection : INetworkConnection, IDisposable
         _fsdSession.SendPdu(new PDUAddATC(Callsign, _appConfig.Name, _appConfig.UserId.Trim(),
             _appConfig.PasswordDecrypted,
             // can-fsd uses protocol revision 100 for the classic CAN login.
-            // ClientAuth.ClientId remains 0, so the VATSIM challenge flow is
-            // still disabled while the server accepts the protocol revision.
             _appConfig.NetworkRating, ProtocolRevision.VatsimAuth));
 
         _fsdSession.SendPdu(new PDUClientQuery(Callsign, PDUBase.SERVER_CALLSIGN, ClientQueryType.PublicIp));

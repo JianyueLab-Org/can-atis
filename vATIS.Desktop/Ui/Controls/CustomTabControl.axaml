@@ -24,14 +24,15 @@
 				<DockPanel>
 					<ScrollViewer
 						Theme="{StaticResource CustomTabControlScrollViewer}"
-						HorizontalScrollBarVisibility="Auto"
-						VerticalScrollBarVisibility="Disabled"
-						DockPanel.Dock="Top">
+						HorizontalScrollBarVisibility="Disabled"
+						VerticalScrollBarVisibility="Auto"
+						Width="150"
+						DockPanel.Dock="Left">
 						<ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}"/>
 					</ScrollViewer>
 					<Border Name="PART_TabControlBorder"
 							Margin="0,-1,0,0"
-							ZIndex="-100"
+							ZIndex="0"
 							BorderBrush="{TemplateBinding BorderBrush}"
 							BorderThickness="1"
 							Background="Transparent">
@@ -127,11 +128,18 @@
 							</Style>
 						</RepeatButton.Styles>
 					</RepeatButton>
+						<ScrollBar Orientation="Vertical"
+								   DockPanel.Dock="Right"
+								   Width="12"
+								   Minimum="0"
+								   Maximum="{Binding Extent.Height, RelativeSource={RelativeSource TemplatedParent}}"
+								   ViewportSize="{Binding Viewport.Height, RelativeSource={RelativeSource TemplatedParent}}"
+								   Value="{Binding Offset.Y, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"/>
 					<ScrollContentPresenter Name="PART_ContentPresenter"
-													CanHorizontallyScroll="True"
-													CanVerticallyScroll="False"
-													ContentTemplate="{TemplateBinding ContentTemplate}"
-													Offset="{TemplateBinding Offset, Mode=TwoWay}"/>
+															CanHorizontallyScroll="True"
+															CanVerticallyScroll="True"
+															ContentTemplate="{TemplateBinding ContentTemplate}"
+															Offset="{TemplateBinding Offset, Mode=TwoWay}"/>
 				</DockPanel>
 			</ControlTemplate>
 		</Setter>

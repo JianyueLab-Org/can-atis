@@ -42,7 +42,10 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<TargetPath>opus.dll</TargetPath>
 		</ContentWithTargetPath>
-		<None Include="..\..\atis\airports.json" CopyToOutputDirectory="PreserveNewest" Link="Data\airports.json" />
+		<ContentWithTargetPath Include="Data\airports.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<TargetPath>Data\airports.json</TargetPath>
+		</ContentWithTargetPath>
 	</ItemGroup>
 
 	<!-- Select the native library by target runtime so cross-compiling (e.g. publishing osx-* from Linux) picks the right one; fall back to the host OS when no RID is given. -->

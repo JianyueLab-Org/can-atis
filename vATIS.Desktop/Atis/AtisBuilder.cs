@@ -16,10 +16,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Serilog;
-using Vatsim.Network;
 using Vatsim.Vatis.Atis.Extensions;
 using Vatsim.Vatis.Atis.Nodes;
-using Vatsim.Vatis.Container;
 using Vatsim.Vatis.Io;
 using Vatsim.Vatis.NavData;
 using Vatsim.Vatis.Profiles.Models;
@@ -41,7 +39,6 @@ public class AtisBuilder : IAtisBuilder
     private readonly IMetarRepository? _metarRepository;
     private readonly INavDataRepository? _navDataRepository;
     private readonly ITextToSpeechService? _textToSpeechService;
-    private readonly IClientAuth _clientAuth;
     private readonly IWavPackService _wavPackService;
 
     /// <summary>
@@ -51,10 +48,9 @@ public class AtisBuilder : IAtisBuilder
     /// <param name="navDataRepository">The navigation data repository.</param>
     /// <param name="textToSpeechService">The text to speech service.</param>
     /// <param name="metarRepository">The METAR repository.</param>
-    /// <param name="clientAuth">The client auth service.</param>
     /// <param name="wavPackService">The WAV voice pack service.</param>
     public AtisBuilder(IDownloader downloader, INavDataRepository navDataRepository,
-        ITextToSpeechService textToSpeechService, IMetarRepository metarRepository, IClientAuth clientAuth,
+        ITextToSpeechService textToSpeechService, IMetarRepository metarRepository,
         IWavPackService wavPackService)
     {
         _wavPackService = wavPackService;
@@ -62,7 +58,6 @@ public class AtisBuilder : IAtisBuilder
         _metarRepository = metarRepository;
         _navDataRepository = navDataRepository;
         _textToSpeechService = textToSpeechService;
-        _clientAuth = clientAuth;
     }
 
     /// <inheritdoc/>
@@ -302,15 +297,8 @@ public class AtisBuilder : IAtisBuilder
         {
             ArgumentNullException.ThrowIfNull(_downloader);
 
-            string? jwt = null;
-            if (!ServiceProvider.IsDevelopmentEnvironment() && !string.IsNullOrEmpty(_clientAuth.IdsValidationKey()))
-            {
-                // Generate a signed JWT token for optional validation by the IDS server.
-                jwt = JwtHelper.GenerateJwt(_clientAuth.IdsValidationKey(), "ids-validation");
-            }
-
             var jsonSerialized = JsonSerializer.Serialize(request, SourceGenerationContext.NewDefault.IdsUpdateRequest);
-            await _downloader.PostJson(station.IdsEndpoint, jsonSerialized, jwt, cancellationToken);
+            await _downloader.PostJson(station.IdsEndpoint, jsonSerialized, cancellationToken: cancellationToken);
         }
         catch (OperationCanceledException)
         {

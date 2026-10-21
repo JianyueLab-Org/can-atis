@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Vatsim.Network;
 using Vatsim.Vatis.Atis;
 using Vatsim.Vatis.Io;
 using Vatsim.Vatis.Profiles.Models;
@@ -20,7 +19,7 @@ public class AtisBuilderIdsTests
     private static (AtisBuilder Builder, FakeDownloader Downloader) Create()
     {
         var downloader = new FakeDownloader();
-        var builder = new AtisBuilder(downloader, null!, null!, null!, new FakeClientAuth(), null!);
+        var builder = new AtisBuilder(downloader, null!, null!, null!, null!);
         return (builder, downloader);
     }
 
@@ -94,19 +93,6 @@ public class AtisBuilderIdsTests
         await builder.DisconnectIds(station, CancellationToken.None);
 
         Assert.Empty(downloader.Posts);
-    }
-
-    private sealed class FakeClientAuth : IClientAuth
-    {
-        public ushort ClientId => 0;
-
-        public string? IdsValidationKey() => null;
-
-        public string? GenerateHubToken() => null;
-
-        public string GenerateAuthResponse(string challenge, string key = "") => throw new NotSupportedException();
-
-        public string GenerateAuthChallenge() => throw new NotSupportedException();
     }
 
     private sealed class FakeDownloader : IDownloader

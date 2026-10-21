@@ -3,7 +3,6 @@
 // Licensed under the GPLv3 license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using Vatsim.Network;
 using Vatsim.Vatis.Config;
 using Vatsim.Vatis.Io;
 using Vatsim.Vatis.NavData;
@@ -44,7 +43,6 @@ internal class NetworkConnectionFactory : INetworkConnectionFactory
         return new NetworkConnection(station, _provider.GetService<IAppConfig>(),
             _provider.GetService<IAuthTokenManager>(), _provider.GetService<IAppConfigurationProvider>(),
             _provider.GetService<IMetarRepository>(),
-            _provider.GetService<IDownloader>(), _provider.GetService<INavDataRepository>(),
-            _provider.GetService<IClientAuth>());
+            _provider.GetService<IDownloader>(), _provider.GetService<INavDataRepository>());
     }
 }

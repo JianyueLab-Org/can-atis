@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Reactive.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Input;
@@ -155,10 +156,84 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
     private void OnPointerPressed(object sender, PointerPressedEventArgs e)
     {
+        if (TryBeginResizeDrag(e))
+            return;
+
         if (e.Source is Border or TextBlock && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             BeginMoveDrag(e);
         }
+    }
+
+    private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        TryBeginResizeDrag(e);
+    }
+
+    private void OnWindowPointerMoved(object? sender, PointerEventArgs e)
+    {
+        Cursor = GetResizeCursor(e.GetPosition(this));
+    }
+
+    private void OnWindowPointerExited(object? sender, PointerEventArgs e)
+    {
+        Cursor = new Cursor(StandardCursorType.Arrow);
+    }
+
+    private Cursor GetResizeCursor(Point position)
+    {
+        if (WindowState == WindowState.Maximized)
+            return new Cursor(StandardCursorType.Arrow);
+
+        const double edgeSize = 8;
+        var nearLeft = position.X <= edgeSize;
+        var nearRight = position.X >= Bounds.Width - edgeSize;
+        var nearTop = position.Y <= edgeSize;
+        var nearBottom = position.Y >= Bounds.Height - edgeSize;
+
+        var cursorType = (nearLeft, nearTop, nearRight, nearBottom) switch
+        {
+            (true, true, false, false) or (false, false, true, true) => StandardCursorType.TopLeftCorner,
+            (false, true, true, false) or (true, false, false, true) => StandardCursorType.TopRightCorner,
+            (true, false, false, false) or (false, false, true, false) => StandardCursorType.SizeWestEast,
+            (_, true, _, false) or (_, false, _, true) => StandardCursorType.SizeNorthSouth,
+            _ => StandardCursorType.Arrow
+        };
+
+        return new Cursor(cursorType);
+    }
+
+    private bool TryBeginResizeDrag(PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed || WindowState == WindowState.Maximized)
+            return false;
+
+        var position = e.GetPosition(this);
+        const double edgeSize = 8;
+        var nearLeft = position.X <= edgeSize;
+        var nearRight = position.X >= Bounds.Width - edgeSize;
+        var nearTop = position.Y <= edgeSize;
+        var nearBottom = position.Y >= Bounds.Height - edgeSize;
+
+        WindowEdge? edge = (nearLeft, nearTop, nearRight, nearBottom) switch
+        {
+            (true, true, false, false) => WindowEdge.NorthWest,
+            (false, true, true, false) => WindowEdge.NorthEast,
+            (true, false, false, true) => WindowEdge.SouthWest,
+            (false, false, true, true) => WindowEdge.SouthEast,
+            (_, true, _, false) => WindowEdge.North,
+            (true, false, false, false) => WindowEdge.West,
+            (false, false, true, false) => WindowEdge.East,
+            (_, false, _, true) => WindowEdge.South,
+            _ => null
+        };
+
+        if (edge is null)
+            return false;
+
+        BeginResizeDrag(edge.Value, e);
+        e.Handled = true;
+        return true;
     }
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
