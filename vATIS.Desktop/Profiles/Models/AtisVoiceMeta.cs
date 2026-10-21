@@ -15,9 +15,17 @@ namespace Vatsim.Vatis.Profiles.Models;
 public class AtisVoiceMeta
 {
     /// <summary>
-    /// Gets or sets a value indicating whether text-to-speech should be used for ATIS voice configuration.
+    /// Whether this build can synthesize a voice ATIS. CAN has no compatible text-to-speech endpoint, so a station
+    /// that has <see cref="UseTextToSpeech"/> saved from an older or imported profile is treated as recorded.
     /// </summary>
-    public bool UseTextToSpeech { get; set; } = true;
+    public const bool TextToSpeechAvailable = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether text-to-speech should be used for ATIS voice configuration.
+    /// The saved value is kept so profiles round-trip, but it only takes effect when
+    /// <see cref="TextToSpeechAvailable"/> is true; read <see cref="UsesTextToSpeech"/> instead.
+    /// </summary>
+    public bool UseTextToSpeech { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the voice ATIS is stitched from pre-recorded WAV clips.
@@ -40,7 +48,13 @@ public class AtisVoiceMeta
     /// rather than recorded by the user.
     /// </summary>
     [JsonIgnore]
-    public bool IsAutomatic => UseTextToSpeech || UseWavPack;
+    public bool IsAutomatic => UsesTextToSpeech || UseWavPack;
+
+    /// <summary>
+    /// Gets a value indicating whether the voice ATIS is actually synthesized by text-to-speech.
+    /// </summary>
+    [JsonIgnore]
+    public bool UsesTextToSpeech => TextToSpeechAvailable && UseTextToSpeech;
 
     /// <summary>
     /// Gets or sets the name of the voice to be used for ATIS voice configuration.

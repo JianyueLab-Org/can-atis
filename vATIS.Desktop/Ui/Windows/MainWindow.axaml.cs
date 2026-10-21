@@ -6,13 +6,13 @@
 using System;
 using System.IO;
 using System.Reactive.Linq;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.ReactiveUI;
 using Serilog;
+using Vatsim.Vatis.Ui.Common;
 using Vatsim.Vatis.Ui.Controls.Notification;
 using Vatsim.Vatis.Ui.Extensions;
 using Vatsim.Vatis.Ui.ViewModels;
@@ -156,7 +156,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
     private void OnPointerPressed(object sender, PointerPressedEventArgs e)
     {
-        if (TryBeginResizeDrag(e))
+        if (BorderlessWindowResize.TryBeginResizeDrag(this, e))
             return;
 
         if (e.Source is Border or TextBlock && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
@@ -167,73 +167,17 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
     private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        TryBeginResizeDrag(e);
+        BorderlessWindowResize.TryBeginResizeDrag(this, e);
     }
 
     private void OnWindowPointerMoved(object? sender, PointerEventArgs e)
     {
-        Cursor = GetResizeCursor(e.GetPosition(this));
+        BorderlessWindowResize.UpdateCursor(this, e);
     }
 
     private void OnWindowPointerExited(object? sender, PointerEventArgs e)
     {
-        Cursor = new Cursor(StandardCursorType.Arrow);
-    }
-
-    private Cursor GetResizeCursor(Point position)
-    {
-        if (WindowState == WindowState.Maximized)
-            return new Cursor(StandardCursorType.Arrow);
-
-        const double edgeSize = 8;
-        var nearLeft = position.X <= edgeSize;
-        var nearRight = position.X >= Bounds.Width - edgeSize;
-        var nearTop = position.Y <= edgeSize;
-        var nearBottom = position.Y >= Bounds.Height - edgeSize;
-
-        var cursorType = (nearLeft, nearTop, nearRight, nearBottom) switch
-        {
-            (true, true, false, false) or (false, false, true, true) => StandardCursorType.TopLeftCorner,
-            (false, true, true, false) or (true, false, false, true) => StandardCursorType.TopRightCorner,
-            (true, false, false, false) or (false, false, true, false) => StandardCursorType.SizeWestEast,
-            (_, true, _, false) or (_, false, _, true) => StandardCursorType.SizeNorthSouth,
-            _ => StandardCursorType.Arrow
-        };
-
-        return new Cursor(cursorType);
-    }
-
-    private bool TryBeginResizeDrag(PointerPressedEventArgs e)
-    {
-        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed || WindowState == WindowState.Maximized)
-            return false;
-
-        var position = e.GetPosition(this);
-        const double edgeSize = 8;
-        var nearLeft = position.X <= edgeSize;
-        var nearRight = position.X >= Bounds.Width - edgeSize;
-        var nearTop = position.Y <= edgeSize;
-        var nearBottom = position.Y >= Bounds.Height - edgeSize;
-
-        WindowEdge? edge = (nearLeft, nearTop, nearRight, nearBottom) switch
-        {
-            (true, true, false, false) => WindowEdge.NorthWest,
-            (false, true, true, false) => WindowEdge.NorthEast,
-            (true, false, false, true) => WindowEdge.SouthWest,
-            (false, false, true, true) => WindowEdge.SouthEast,
-            (_, true, _, false) => WindowEdge.North,
-            (true, false, false, false) => WindowEdge.West,
-            (false, false, true, false) => WindowEdge.East,
-            (_, false, _, true) => WindowEdge.South,
-            _ => null
-        };
-
-        if (edge is null)
-            return false;
-
-        BeginResizeDrag(edge.Value, e);
-        e.Handled = true;
-        return true;
+        BorderlessWindowResize.ResetCursor(this);
     }
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)

@@ -27,7 +27,7 @@
 			BorderThickness="1"
             Background="#202637"
 			ClipToBounds="True">
-		<Grid RowDefinitions="45,*" ColumnDefinitions="150,*" ClipToBounds="True">
+		<Grid RowDefinitions="45,*" ColumnDefinitions="1*,1*" ClipToBounds="True">
 			<Grid x:Name="Overlay" Grid.ColumnSpan="2" Grid.RowSpan="2" ZIndex="100" IsVisible="{Binding ShowOverlay, DataType=vm:MainWindowViewModel, FallbackValue=False}">
 				<Border Background="#000000" Opacity="0.80"/>
 			</Grid>

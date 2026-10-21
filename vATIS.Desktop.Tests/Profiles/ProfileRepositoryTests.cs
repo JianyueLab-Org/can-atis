@@ -127,7 +127,8 @@ public sealed class ProfileRepositoryTests : IDisposable
         Assert.Equal("pack-1", egll.WavPackId);
         var egkk = updated.Stations!.Single(x => x.Identifier == "EGKK").AtisVoice;
         Assert.False(egkk.UseWavPack);
-        Assert.True(egkk.UseTextToSpeech);
+        // Without a voice pack the CAN client records the voice ATIS; there is no text-to-speech fallback.
+        Assert.False(egkk.IsAutomatic);
     }
 
     private static Profile CreateRemoteProfile(string name, int updateSerial) => new()

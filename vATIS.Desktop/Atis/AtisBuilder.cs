@@ -429,7 +429,7 @@ public class AtisBuilder : IAtisBuilder
         text = Regex.Replace(text, @"[!?.]*([!?.])", "$1"); // clean up duplicate punctuation one last time
         text = Regex.Replace(text, "\\s+([.,!\":])", "$1");
 
-        if (station.AtisVoice.UseTextToSpeech)
+        if (station.AtisVoice.UsesTextToSpeech)
         {
             if (_textToSpeechService == null)
                 throw new AtisBuilderException("TextToSpeech service not initialized");
