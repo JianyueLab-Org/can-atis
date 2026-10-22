@@ -23,7 +23,7 @@
         WindowStartupLocation="CenterScreen"
         Topmost="{Binding IsTopMost, DataType=vm:MiniWindowTopMostViewModel,
         Source={x:Static vm:MiniWindowTopMostViewModel.Instance}}"
-        Title="CAN ATIS">
+        Title="CAN ATIS" Icon="/Assets/MainIcon.ico">
     <Window.Resources>
         <converter:AtisLetterColorConverter x:Key="AtisLetterColorConverter"/>
         <converter:EnumToBrushConverter x:Key="ConnectionStatusToBrush" Match="Aqua" NoMatch="Tomato"/>

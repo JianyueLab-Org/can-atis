@@ -16,7 +16,7 @@
 		WindowStartupLocation="CenterOwner"
 		Background="Transparent"
 		TransparencyLevelHint="Transparent"
-		Title="User Settings">
+		Title="用户设置" Icon="/Assets/MainIcon.ico">
 	<Border BorderBrush="{DynamicResource Brush.Border.Control}" BorderThickness="1" Background="{DynamicResource Brush.Bg.Panel}" CornerRadius="4">
 		<StackPanel>
             <Border BorderBrush="#3A4560" BorderThickness="0,0,0,1" Background="Transparent" PointerPressed="OnPointerPressed">
