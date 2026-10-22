@@ -138,6 +138,8 @@ public class TextToSpeechService : ITextToSpeechService
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
+                // Close flushes the samples and finalizes the RIFF data sizes before reading.
+                stream.Close();
                 var samples = WavDecoder.Decode(File.ReadAllBytes(outputPath));
                 var pcm = new byte[samples.Length * sizeof(short)];
                 Buffer.BlockCopy(samples, 0, pcm, 0, pcm.Length);

@@ -112,7 +112,7 @@
 				</editor:TextEditor>
 			</Grid>
 			<!--Bottom Toolbar-->
-			<Grid Grid.ColumnSpan="3" Grid.Column="0" Grid.Row="2" Margin="0,10,0,0" ColumnDefinitions="120,*,120"
+			<Grid Grid.ColumnSpan="3" Grid.Column="0" Grid.Row="2" Margin="0,10,0,0" ColumnDefinitions="120,*,90,120"
 			      RowDefinitions="30">
 				<Button Command="{Binding VoiceRecordAtisCommand, DataType=vm:AtisStationViewModel}" Theme="{StaticResource Dark}" Content="RECORD ATIS" Grid.Column="0" Margin="0,0,5,0">
                     <Interaction.Behaviors>
@@ -131,7 +131,8 @@
 						</RoutedEventTriggerBehavior>
 					</Interaction.Behaviors>
 				</controls:NonNavigableComboBox>
-				<Button Grid.Column="2" Margin="5,0,0,0" Theme="{StaticResource Dark}" Content="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource ConnectButtonLabelConverter}, FallbackValue=CONNECT}" Command="{Binding NetworkConnectCommand, DataType=vm:AtisStationViewModel}" Background="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource ConnectButtonColorConverter}}" />
+				<Button Grid.Column="2" Margin="5,0,0,0" Theme="{StaticResource Dark}" Content="{Binding PreviewButtonText, DataType=vm:AtisStationViewModel}" Command="{Binding PreviewAtisCommand, DataType=vm:AtisStationViewModel}" ToolTip.Tip="在本机试听当前已生成的 ATIS 音频，不影响网络播报。" />
+				<Button Grid.Column="3" Margin="5,0,0,0" Theme="{StaticResource Dark}" Content="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource ConnectButtonLabelConverter}, FallbackValue=CONNECT}" Command="{Binding NetworkConnectCommand, DataType=vm:AtisStationViewModel}" Background="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource ConnectButtonColorConverter}}" />
 			</Grid>
 		</Grid>
 	</Border>

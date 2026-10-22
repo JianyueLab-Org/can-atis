@@ -123,6 +123,11 @@ public class AtisStationViewModel : ReactiveViewModelBase, IDisposable, ISpokenT
     private bool _useTexToSpeech;
     private RecordedAtisState _recordedAtisState = RecordedAtisState.Disconnected;
     private byte[]? _lastRecordedAtisAudio;
+    private static AtisStationViewModel? s_previewOwner;
+    private byte[]? _previewAudio;
+    private bool _hasPreviewAudio;
+    private bool _isPreviewPlaying;
+    private CancellationTokenSource? _previewCts;
     private NetworkConnectionStatus _networkConnectionStatus = NetworkConnectionStatus.Disconnected;
     private List<ICompletionData> _contractionCompletionData = [];
     private bool _hasUnsavedAirportConditions;
@@ -226,6 +231,9 @@ public class AtisStationViewModel : ReactiveViewModelBase, IDisposable, ISpokenT
         var isConnected = this.WhenAnyValue(x => x.NetworkConnectionStatus)
             .Select(status => status == NetworkConnectionStatus.Connected);
         OverrideMetarCommand = ReactiveCommand.Create(HandleOverrideMetar, isConnected);
+        PreviewAtisCommand = ReactiveCommand.Create(() => HandlePreviewAtis().SafeFireAndForget(),
+            this.WhenAnyValue(x => x.HasPreviewAudio, x => x.NetworkConnectionStatus,
+                (hasAudio, status) => hasAudio && status == NetworkConnectionStatus.Connected));
         RevertMetarOverrideCommand = ReactiveCommand.CreateFromTask(HandleRevertMetarOverride,
             this.WhenAnyValue(x => x.IsMetarOverridden, x => x.NetworkConnectionStatus,
                 (overridden, status) => overridden && status == NetworkConnectionStatus.Connected));
@@ -238,6 +246,7 @@ public class AtisStationViewModel : ReactiveViewModelBase, IDisposable, ISpokenT
                 _overrideMetar = null;
                 IsMetarOverridden = false;
                 IsMetarInputMode = false;
+                SetPreviewAudio(null);
             })
             .DisposeWith(_disposables);
 
@@ -580,6 +589,88 @@ public class AtisStationViewModel : ReactiveViewModelBase, IDisposable, ISpokenT
     /// Gets the command used to initiate voice recording for ATIS.
     /// </summary>
     public ReactiveCommand<Unit, Unit> VoiceRecordAtisCommand { get; }
+
+    /// <summary>Gets the command to listen to the current transmitted ATIS locally.</summary>
+    public ReactiveCommand<Unit, Unit> PreviewAtisCommand { get; }
+
+    /// <summary>Gets whether the current connection has generated audio to preview.</summary>
+    public bool HasPreviewAudio
+    {
+        get => _hasPreviewAudio;
+        private set => this.RaiseAndSetIfChanged(ref _hasPreviewAudio, value);
+    }
+
+    /// <summary>Gets the preview button label.</summary>
+    public string PreviewButtonText => _isPreviewPlaying ? "停止试听" : "试听";
+
+    private void SetPreviewAudio(byte[]? audio)
+    {
+        StopPreview();
+        _previewAudio = audio;
+        HasPreviewAudio = audio is { Length: > 0 };
+    }
+
+    private void StopPreview()
+    {
+        _previewCts?.Cancel();
+        if (s_previewOwner == this)
+        {
+            if (NativeAudio.IsAvailable)
+                NativeAudio.StopBufferPlayback();
+            s_previewOwner = null;
+        }
+
+        _isPreviewPlaying = false;
+        this.RaisePropertyChanged(nameof(PreviewButtonText));
+    }
+
+    private async Task HandlePreviewAtis()
+    {
+        if (_isPreviewPlaying)
+        {
+            StopPreview();
+            return;
+        }
+
+        if (_previewAudio is not { Length: > 0 } audio)
+            return;
+
+        try
+        {
+            s_previewOwner?.StopPreview();
+            if (!NativeAudio.IsAvailable || !NativeAudio.StartBufferPlayback(audio, audio.Length))
+            {
+                NotificationManager?.Show(new Notification("试听失败", "无法打开本地音频输出，请检查音频组件和播放设备。"), NotificationType.Error);
+                return;
+            }
+
+            s_previewOwner = this;
+            _isPreviewPlaying = true;
+            this.RaisePropertyChanged(nameof(PreviewButtonText));
+            using var cts = new CancellationTokenSource();
+            _previewCts = cts;
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(audio.Length / 96000.0 + 0.5), cts.Token);
+                StopPreview();
+            }
+            catch (OperationCanceledException)
+            {
+                // Stopped by the user, a new ATIS, or disconnect.
+            }
+            finally
+            {
+                if (_previewCts == cts)
+                    _previewCts = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            StopPreview();
+            Log.Error(ex, "Error previewing current ATIS");
+            NotificationManager?.Show(new Notification("试听失败", ex.Message), NotificationType.Error);
+        }
+    }
 
     /// <summary>
     /// Gets the command to open the static airport conditions dialog.
@@ -1023,6 +1114,8 @@ public class AtisStationViewModel : ReactiveViewModelBase, IDisposable, ISpokenT
     /// <inheritdoc />
     public void Dispose()
     {
+        StopPreview();
+        PreviewAtisCommand.Dispose();
         _datisRepository.RemoveStation(AtisStation.Id);
         _disposables.Dispose();
 
@@ -1431,6 +1524,7 @@ public class AtisStationViewModel : ReactiveViewModelBase, IDisposable, ISpokenT
                                 localToken.Token);
 
                             _lastRecordedAtisAudio = vm.AudioBuffer;
+                            SetPreviewAudio(vm.AudioBuffer);
                             RecordedAtisState = RecordedAtisState.Connected;
                             StopUnrecordedAtisTimer();
                         }
@@ -2165,6 +2259,12 @@ public class AtisStationViewModel : ReactiveViewModelBase, IDisposable, ISpokenT
                             _atisStationAirport.Latitude, _atisStationAirport.Longitude, TransceiverHeightM);
                         dto.PcmData = voiceAtis.AudioBytes;
 
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            if (!cancellationToken.IsCancellationRequested &&
+                                NetworkConnectionStatus == NetworkConnectionStatus.Connected)
+                                SetPreviewAudio(voiceAtis.AudioBytes);
+                        });
                         await _voiceServerConnection.AddOrUpdateBot(_networkConnection.Callsign, dto, cancellationToken);
                     }
                 }
