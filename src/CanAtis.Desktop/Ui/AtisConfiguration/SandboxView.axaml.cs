@@ -1,0 +1,223 @@
+// <copyright file="SandboxView.axaml.cs" company="Justin Shannon">
+// Copyright (c) Justin Shannon. All rights reserved.
+// Licensed under the GPLv3 license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System;
+using System.ComponentModel;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.ReactiveUI;
+using AvaloniaEdit.Document;
+using AvaloniaEdit.Editing;
+using CanAtis.Ui.Common;
+using CanAtis.Ui.ViewModels.AtisConfiguration;
+
+namespace CanAtis.Ui.AtisConfiguration;
+
+/// <summary>
+/// Represents a view for the sandbox section used within the ATIS configuration UI.
+/// </summary>
+public partial class SandboxView : ReactiveUserControl<SandboxViewModel>
+{
+    private SandboxViewModel? _observedViewModel;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SandboxView"/> class.
+    /// </summary>
+    public SandboxView()
+    {
+        InitializeComponent();
+        TextAtis.TextArea.TextView.LineTransformers.Add(new ErrorTextTransformer());
+        VoiceAtis.TextArea.TextView.LineTransformers.Add(new ErrorTextTransformer());
+        Loaded += OnLoaded;
+    }
+
+    /// <inheritdoc />
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+
+        if (_observedViewModel != null)
+        {
+            _observedViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            _observedViewModel = null;
+        }
+
+        if (ViewModel != null)
+        {
+            _observedViewModel = ViewModel;
+            _observedViewModel.PropertyChanged += OnViewModelPropertyChanged;
+            UpdateConditionsRowHeight();
+        }
+
+        if (ViewModel != null)
+        {
+            // Assign empty read-only section providers before setting new ones
+            AirportConditions.TextArea.ReadOnlySectionProvider = new TextSegmentReadOnlySectionProvider<TextSegment>([]);
+            NotamFreeText.TextArea.ReadOnlySectionProvider = new TextSegmentReadOnlySectionProvider<TextSegment>([]);
+
+            // Remove previous transformers
+            ReadOnlySegmentTransformer.RemoveFrom(AirportConditions.TextArea.TextView);
+            ReadOnlySegmentTransformer.RemoveFrom(NotamFreeText.TextArea.TextView);
+
+            // Assign new read-only sections
+            AirportConditions.TextArea.ReadOnlySectionProvider =
+                new TextSegmentReadOnlySectionProvider<TextSegment>(ViewModel.ReadOnlyAirportConditions);
+            NotamFreeText.TextArea.ReadOnlySectionProvider =
+                new TextSegmentReadOnlySectionProvider<TextSegment>(ViewModel.ReadOnlyNotams);
+
+            // Add new line transformers
+            AirportConditions.TextArea.TextView.LineTransformers.Add(
+                new ReadOnlySegmentTransformer(ViewModel.ReadOnlyAirportConditions));
+            NotamFreeText.TextArea.TextView.LineTransformers.Add(
+                new ReadOnlySegmentTransformer(ViewModel.ReadOnlyNotams));
+        }
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SandboxViewModel.IsExternalPreset))
+        {
+            UpdateConditionsRowHeight();
+        }
+    }
+
+    // Airport conditions and NOTAMs do not apply to an external preset, so the row that holds them is collapsed
+    // and the ATIS boxes fill the space instead of leaving it empty.
+    private void UpdateConditionsRowHeight()
+    {
+        Layout.RowDefinitions[2].Height =
+            ViewModel?.IsExternalPreset == true ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
+    }
+
+    private void OnLoaded(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel == null)
+            return;
+
+        NotamFreeText.TextChanged += (_, _) => NotamsCaretPosition();
+        NotamFreeText.TextArea.Caret.PositionChanged += (_, _) => NotamsCaretPosition();
+        NotamFreeText.TextArea.GotFocus += (_, _) => NotamsCaretPosition();
+
+        AirportConditions.TextChanged += (_, _) => AirportConditionsCaretPosition();
+        AirportConditions.TextArea.Caret.PositionChanged += (_, _) => AirportConditionsCaretPosition();
+        AirportConditions.TextArea.GotFocus += (_, _) => AirportConditionsCaretPosition();
+    }
+
+    private void NotamsCaretPosition()
+    {
+        if (ViewModel?.ReadOnlyNotams == null)
+            return;
+
+        if (ViewModel.SelectedStation == null)
+            return;
+
+        foreach (var segment in ViewModel.ReadOnlyNotams)
+        {
+            // If caret is within or at the start of a read-only segment
+            if (NotamFreeText.CaretOffset >= segment.StartOffset && NotamFreeText.CaretOffset <= segment.EndOffset)
+            {
+                if (ViewModel.SelectedStation.NotamsBeforeFreeText)
+                {
+                    // Move caret to the end of the read-only segment
+                    NotamFreeText.CaretOffset = segment.EndOffset;
+                }
+                else
+                {
+                    // Move caret to the beginning of the read-only segment
+                    NotamFreeText.CaretOffset = segment.StartOffset;
+                }
+
+                break;
+            }
+        }
+    }
+
+    private void AirportConditionsCaretPosition()
+    {
+        if (ViewModel?.ReadOnlyAirportConditions == null)
+            return;
+
+        if (ViewModel.SelectedStation == null)
+            return;
+
+        foreach (var segment in ViewModel.ReadOnlyAirportConditions)
+        {
+            // If caret is within or at the start of a read-only segment
+            if (AirportConditions.CaretOffset >= segment.StartOffset && AirportConditions.CaretOffset <= segment.EndOffset)
+            {
+                if (ViewModel.SelectedStation.AirportConditionsBeforeFreeText)
+                {
+                    // Move caret to the end of the read-only segment
+                    AirportConditions.CaretOffset = segment.EndOffset;
+                }
+                else
+                {
+                    // Move caret to the beginning of the read-only segment
+                    AirportConditions.CaretOffset = segment.StartOffset;
+                }
+
+                break;
+            }
+        }
+    }
+
+    private void AirportConditions_OnTextChanged(object? sender, EventArgs e)
+    {
+        if (DataContext is SandboxViewModel vm)
+        {
+            if (vm.SelectedPreset == null)
+                return;
+
+            if (!AirportConditions.TextArea.IsFocused)
+                return;
+
+            var readonlySegment = vm.ReadOnlyAirportConditions.FirstSegment;
+            string userText;
+
+            if (readonlySegment != null)
+            {
+                userText = readonlySegment.StartOffset == 0
+                    ? AirportConditions.Text[readonlySegment.EndOffset..].TrimEnd()
+                    : AirportConditions.Text[..readonlySegment.StartOffset].TrimEnd();
+            }
+            else
+            {
+                userText = AirportConditions.Text.TrimEnd();
+            }
+
+            var presetText = vm.SelectedPreset.AirportConditions?.TrimEnd() ?? "";
+            vm.HasUnsavedAirportConditions = !string.Equals(presetText, userText, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    private void NotamFreeText_OnTextChanged(object? sender, EventArgs e)
+    {
+        if (DataContext is SandboxViewModel vm)
+        {
+            if (vm.SelectedPreset == null)
+                return;
+
+            if (!NotamFreeText.TextArea.IsFocused)
+                return;
+
+            var readonlySegment = vm.ReadOnlyNotams.FirstSegment;
+            string userText;
+
+            if (readonlySegment != null)
+            {
+                userText = readonlySegment.StartOffset == 0
+                    ? NotamFreeText.Text[readonlySegment.EndOffset..].TrimEnd()
+                    : NotamFreeText.Text[..readonlySegment.StartOffset].TrimEnd();
+            }
+            else
+            {
+                userText = NotamFreeText.Text.TrimEnd();
+            }
+
+            var presetText = vm.SelectedPreset.Notams?.TrimEnd() ?? "";
+            vm.HasUnsavedNotams = !string.Equals(presetText, userText, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+}

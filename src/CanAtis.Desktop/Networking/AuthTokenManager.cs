@@ -1,0 +1,109 @@
+﻿// <copyright file="AuthTokenManager.cs" company="Justin Shannon">
+// Copyright (c) Justin Shannon. All rights reserved.
+// Licensed under the GPLv3 license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System;
+using System.Reactive.Disposables;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Threading;
+using System.Threading.Tasks;
+using CanAtis.Config;
+using CanAtis.Events;
+using CanAtis.Events.EventBus;
+using CanAtis.Io;
+
+namespace CanAtis.Networking;
+
+/// <summary>
+/// Manages the authentication token for the CAN network.
+/// </summary>
+public class AuthTokenManager : IAuthTokenManager, IDisposable
+{
+    private const double AuthTokenShelfLifeMinutes = 2.0;
+
+    private readonly CompositeDisposable _disposables = [];
+    private readonly IDownloader _downloader;
+    private readonly IAppConfig _appConfig;
+    private DateTime _authTokenGeneratedAt;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthTokenManager"/> class.
+    /// </summary>
+    /// <param name="downloader">An implementation of <see cref="IDownloader"/> to manage data downloading operations.</param>
+    /// <param name="appConfig">An implementation of <see cref="IAppConfig"/> to manage application configurations.</param>
+    public AuthTokenManager(IDownloader downloader, IAppConfig appConfig)
+    {
+        _downloader = downloader;
+        _appConfig = appConfig;
+
+        _disposables.Add(EventBus.Instance.Subscribe<GeneralSettingsUpdated>(_ => { AuthToken = null; }));
+    }
+
+    /// <inheritdoc />
+    public string? AuthToken { get; private set; }
+
+    /// <inheritdoc />
+    public async Task<string?> GetAuthToken(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (AuthToken != null && (DateTime.UtcNow - _authTokenGeneratedAt).TotalMinutes < AuthTokenShelfLifeMinutes)
+        {
+            return AuthToken;
+        }
+
+        if (string.IsNullOrEmpty(_appConfig.UserId) || string.IsNullOrEmpty(_appConfig.PasswordDecrypted))
+            throw new AuthTokenException("CAN ID and password are not set.");
+
+        var request = new JsonObject
+        {
+            ["cid"] = _appConfig.UserId,
+            ["password"] = _appConfig.PasswordDecrypted,
+        };
+
+        var jsonRequest = JsonSerializer.Serialize(request, SourceGenerationContext.NewDefault.JsonObject);
+
+        var response = await _downloader.PostJsonResponse(
+            "https://ceruleanavi.net/api/v1/public/auth", jsonRequest,
+            cancellationToken: cancellationToken);
+        {
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Authentication failed.", ex);
+            }
+
+            var jsonResponse = JsonSerializer.Deserialize(await response.Content.ReadAsStringAsync(cancellationToken),
+                SourceGenerationContext.NewDefault.JsonObject);
+            if (jsonResponse == null)
+                return null;
+
+            if (!(bool)(jsonResponse["success"] ??
+                        throw new AuthTokenException(
+                            "Authentication failed. \"success\" value is missing from response.")))
+            {
+                var errorMessage = jsonResponse["error_msg"] ??
+                                   throw new AuthTokenException(
+                                       "Authentication failed. No error message was provided.");
+                throw new AuthTokenException($"Authentication failed. {errorMessage}.");
+            }
+
+            AuthToken = "CAN_AUTHENTICATED";
+            _authTokenGeneratedAt = DateTime.UtcNow;
+
+            return AuthToken;
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _disposables.Dispose();
+        GC.SuppressFinalize(this);
+    }
+}
