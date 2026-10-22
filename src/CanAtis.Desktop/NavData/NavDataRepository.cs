@@ -162,6 +162,13 @@ public class NavDataRepository : INavDataRepository
                 return;
             }
 
+            await using var embedded = typeof(NavDataRepository).Assembly.GetManifestResourceStream("CanAtis.Airports.json");
+            if (embedded != null)
+            {
+                _airports = await JsonSerializer.DeserializeAsync(embedded,
+                    SourceGenerationContext.NewDefault.ListAirport) ?? [];
+                return;
+            }
             Log.Error("Airport navdata file not found: {Path}", PathProvider.AirportsFilePath);
             throw new NavDataUnavailableException();
         }

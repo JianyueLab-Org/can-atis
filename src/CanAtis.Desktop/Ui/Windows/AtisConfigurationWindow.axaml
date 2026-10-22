@@ -21,7 +21,7 @@
         PointerPressed="OnWindowPointerPressed"
         PointerMoved="OnWindowPointerMoved"
         PointerExited="OnWindowPointerExited"
-        Title="Profile Configuration"
+        Title="通播配置"
         Foreground="#eee"
 		Icon="/Assets/MainIcon.ico">
 	<Window.Styles>
@@ -58,16 +58,16 @@
 			</Setter>
 		</Style>
 	</Window.Styles>
-	<Border x:Name="TitleBar" CornerRadius="5" BorderBrush="Black" BorderThickness="1" Background="#1E1E1E" ClipToBounds="True" PointerPressed="OnPointerPressed">
+	<Border x:Name="TitleBar" CornerRadius="4" BorderBrush="{DynamicResource Brush.Border.Control}" BorderThickness="1" Background="{DynamicResource Brush.Bg.Panel}" ClipToBounds="True" PointerPressed="OnPointerPressed">
 		<Grid RowDefinitions="40,*" ColumnDefinitions="1*,1*" ClipToBounds="True">
 			<Grid x:Name="Overlay" Grid.RowSpan="2" Grid.ColumnSpan="2" ZIndex="100" IsVisible="{Binding ShowOverlay, DataType=vm:AtisConfigurationWindowViewModel, FallbackValue=False}">
 				<Border Background="#000000" Opacity="0.80"/>
 			</Grid>
 			<Grid Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="0" ColumnDefinitions="1*,1*">
-				<TextBlock Grid.Column="0" Padding="8,0" Text="ATIS Configuration" VerticalAlignment="Center" FontSize="{DynamicResource UiFontSize}"/>
+				<TextBlock Grid.Column="0" Padding="12,0" Text="通播配置" VerticalAlignment="Center" FontSize="{DynamicResource UiFontSize}"/>
 				<Button Grid.Column="1" Theme="{StaticResource CloseButton}" HorizontalAlignment="Right" Margin="0,0,8,0" Command="{Binding CloseWindowCommand, DataType=vm:AtisConfigurationWindowViewModel}" CommandParameter="{Binding ElementName=Window}"/>
 			</Grid>
-			<Border Background="#323232" ClipToBounds="True" CornerRadius="0,0,5,5" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
+			<Border Background="{DynamicResource Brush.Bg.App}" ClipToBounds="True" CornerRadius="0,0,4,4" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
 				<Grid ColumnDefinitions="225,*" RowDefinitions="*,50" Margin="10,10,10,0">
 					<ListBox x:Name="Stations" Background="#1E1E1E" CornerRadius="4" BorderBrush="#646464" BorderThickness="1" ItemsSource="{Binding AtisStations, DataType=vm:AtisConfigurationWindowViewModel}" SelectionChanged="Stations_OnSelectionChanged" SelectionMode="Single">
 						<ListBox.Styles>
@@ -84,28 +84,28 @@
 						</ListBox.ItemTemplate>
 						<ListBox.ContextMenu>
 							<ContextMenu MinWidth="125" IsVisible="{Binding SelectedAtisStation, DataType=vm:AtisConfigurationWindowViewModel, Converter={x:Static ObjectConverters.IsNotNull}}">
-								<MenuItem Header="Copy" Command="{Binding CopyAtisCommand, DataType=vm:AtisConfigurationWindowViewModel}"/>
-								<MenuItem Header="Rename" Command="{Binding	RenameAtisCommand, DataType=vm:AtisConfigurationWindowViewModel}"/>
-								<MenuItem Header="Export" Command="{Binding ExportAtisCommand, DataType=vm:AtisConfigurationWindowViewModel}"/>
+								<MenuItem Header="复制" Command="{Binding CopyAtisCommand, DataType=vm:AtisConfigurationWindowViewModel}"/>
+								<MenuItem Header="重命名" Command="{Binding RenameAtisCommand, DataType=vm:AtisConfigurationWindowViewModel}"/>
+								<MenuItem Header="导出" Command="{Binding ExportAtisCommand, DataType=vm:AtisConfigurationWindowViewModel}"/>
 								<Separator/>
-								<MenuItem Header="Delete" Command="{Binding DeleteAtisCommand, DataType=vm:AtisConfigurationWindowViewModel}"/>
+								<MenuItem Header="删除" Command="{Binding DeleteAtisCommand, DataType=vm:AtisConfigurationWindowViewModel}"/>
 							</ContextMenu>
 						</ListBox.ContextMenu>
 					</ListBox>
 					<TabControl Grid.Row="0" Grid.Column="1" SelectedIndex="{Binding SelectedTabControlTabIndex, DataType=vm:AtisConfigurationWindowViewModel}" IsEnabled="{Binding SelectedAtisStation, DataType=vm:AtisConfigurationWindowViewModel, Converter={x:Static ObjectConverters.IsNotNull}}">
-						<TabItem Header="General">
+						<TabItem Header="常规">
 							<views:GeneralConfigView DataContext="{Binding GeneralConfigViewModel, DataType=vm:AtisConfigurationWindowViewModel}"/>
 						</TabItem>
-						<TabItem Header="Presets">
+						<TabItem Header="预设">
 							<views:PresetsView DataContext="{Binding PresetsViewModel, DataType=vm:AtisConfigurationWindowViewModel}"/>
 						</TabItem>
-						<TabItem Header="Formatting">
+						<TabItem Header="格式">
 							<views:FormattingView DataContext="{Binding FormattingViewModel, DataType=vm:AtisConfigurationWindowViewModel}"/>
 						</TabItem>
-						<TabItem Header="Contractions">
+						<TabItem Header="缩写">
 							<views:ContractionsView DataContext="{Binding ContractionsViewModel, DataType=vm:AtisConfigurationWindowViewModel}"/>
 						</TabItem>
-						<TabItem Header="Sandbox">
+						<TabItem Header="沙盒">
 							<views:SandboxView DataContext="{Binding SandboxViewModel, DataType=vm:AtisConfigurationWindowViewModel}"/>
 						</TabItem>
 					</TabControl>

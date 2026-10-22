@@ -20,6 +20,9 @@ namespace CanAtis.Config;
 public class AppConfig : IAppConfig
 {
     /// <inheritdoc />
+    public bool StationListOnTop { get; set; }
+
+    /// <inheritdoc />
     public string Name { get; set; } = "CAN ATIS";
 
     /// <inheritdoc />
@@ -103,6 +106,7 @@ public class AppConfig : IAppConfig
         if (config != null)
         {
             Name = config.Name;
+            StationListOnTop = config.StationListOnTop;
             UserId = config.UserId;
             Password = config.Password;
             NetworkRating = config.NetworkRating;

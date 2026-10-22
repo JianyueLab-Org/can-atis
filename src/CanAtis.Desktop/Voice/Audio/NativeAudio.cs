@@ -48,6 +48,26 @@ public static class NativeAudio
     {
         try
         {
+            if (OperatingSystem.IsWindows())
+            {
+                var assembly = typeof(NativeAudio).Assembly;
+                using var resource = assembly.GetManifestResourceStream("CanAtis.NativeAudio.dll");
+                if (resource != null)
+                {
+                    var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(resource));
+                    var directory = System.IO.Path.Combine(CanAtis.Io.PathProvider.AppDataFolderPath, "Runtime", hash);
+                    System.IO.Directory.CreateDirectory(directory);
+                    var path = System.IO.Path.Combine(directory, "NativeAudio.dll");
+                    if (!System.IO.File.Exists(path))
+                    {
+                        resource.Position = 0;
+                        using var destination = System.IO.File.Create(path);
+                        resource.CopyTo(destination);
+                    }
+                    NativeLibrary.SetDllImportResolver(assembly, (name, _, _) =>
+                        name == LibNativeAudio ? NativeLibrary.Load(path) : nint.Zero);
+                }
+            }
             s_handle = Internal_Initialize();
             s_isAvailable = s_handle != nint.Zero;
         }

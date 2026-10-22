@@ -7,7 +7,7 @@
 	<Window.Resources>
 		<converters:BoolToBrushColorConverter x:Key="BoolToBrushColorConverter" TrueColor="Black" FalseColor="#646464"/>
 	</Window.Resources>
-	<Border Background="#323232" BorderBrush="{Binding ShowOverlay, DataType=vm:ProfileListViewModel, Converter={StaticResource BoolToBrushColorConverter}, FallbackValue=#646464}" BorderThickness="1" CornerRadius="5" ClipToBounds="True">
+	<Border Background="{DynamicResource Brush.Bg.App}" BorderBrush="{DynamicResource Brush.Border.Control}" BorderThickness="1" CornerRadius="4" ClipToBounds="True">
 		<Grid ClipToBounds="True">
 			<Grid.RowDefinitions>
 				<RowDefinition Height="30"/>
@@ -17,7 +17,7 @@
 			<Grid x:Name="Overlay" Grid.RowSpan="3" ZIndex="100" IsVisible="{Binding ShowOverlay, DataType=vm:ProfileListViewModel, FallbackValue=False}">
 				<Border Background="#000000" Opacity="0.80"/>
 			</Grid>
-			<DockPanel Grid.Row="0" VerticalAlignment="Center" PointerPressed="OnPointerPressed" Background="#323232">
+			<DockPanel Grid.Row="0" VerticalAlignment="Center" PointerPressed="OnPointerPressed" Background="{DynamicResource Brush.Bg.Panel}">
 				<Border BorderBrush="#646464" BorderThickness="0,0,0,1">
  					<TextBlock Foreground="White" Text="CAN ATIS 配置" Margin="5,3" />
 				</Border>

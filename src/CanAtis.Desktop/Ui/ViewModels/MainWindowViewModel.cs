@@ -22,6 +22,7 @@ using DynamicData.Binding;
 using ReactiveUI;
 using Serilog;
 using CanAtis.Events;
+using CanAtis.Config;
 using CanAtis.Events.EventBus;
 using CanAtis.Events.WebSocket;
 using CanAtis.Networking;
@@ -55,6 +56,7 @@ public class MainWindowViewModel : ReactiveViewModelBase, IDisposable
     private int _selectedTabIndex;
     private string _currentTime = DateTime.UtcNow.ToString("HH:mm/ss", CultureInfo.InvariantCulture);
     private bool _showOverlay;
+    private readonly IAppConfig _appConfig;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MainWindowViewModel"/> class.
@@ -67,9 +69,10 @@ public class MainWindowViewModel : ReactiveViewModelBase, IDisposable
     /// <param name="websocketService">The service responsible for managing WebSocket communication.</param>
     public MainWindowViewModel(ISessionManager sessionManager, IWindowFactory windowFactory,
         IViewModelFactory viewModelFactory, IWindowLocationService windowLocationService,
-        IAtisHubConnection atisHubConnection, IWebsocketService websocketService)
+        IAtisHubConnection atisHubConnection, IWebsocketService websocketService, IAppConfig appConfig)
     {
         _sessionManager = sessionManager;
+        _appConfig = appConfig;
         _windowFactory = windowFactory;
         _viewModelFactory = viewModelFactory;
         _windowLocationService = windowLocationService;
@@ -138,6 +141,8 @@ public class MainWindowViewModel : ReactiveViewModelBase, IDisposable
         AtisStations = sortedStations;
 
         _disposables.Add(EventBus.Instance.Subscribe<OpenGenerateSettingsDialog>(_ => OpenSettingsDialog()));
+        _disposables.Add(EventBus.Instance.Subscribe<GeneralSettingsUpdated>(_ =>
+            this.RaisePropertyChanged(nameof(StationListOnTop))));
         _disposables.Add(EventBus.Instance.Subscribe<AtisStationAdded>(evt =>
         {
             if (_sessionManager.CurrentProfile?.Stations == null)
@@ -205,6 +210,11 @@ public class MainWindowViewModel : ReactiveViewModelBase, IDisposable
     /// Gets or sets the owner window of the view model.
     /// </summary>
     public Window? Owner { get; set; }
+
+    /// <summary>
+    /// Gets a value indicating whether station navigation is displayed along the top.
+    /// </summary>
+    public bool StationListOnTop => _appConfig.StationListOnTop;
 
     /// <summary>
     /// Gets or sets the collection of ATIS station view models to display in the tab control.
@@ -452,6 +462,8 @@ public class MainWindowViewModel : ReactiveViewModelBase, IDisposable
     private void DispatcherTimerOnTick(object? sender, EventArgs e)
     {
         CurrentTime = DateTime.UtcNow.ToString("HH:mm/ss", CultureInfo.InvariantCulture);
+        foreach (var station in AtisStations)
+            station.RefreshConnectionDiagnostics();
     }
 
     private void OnWindowCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

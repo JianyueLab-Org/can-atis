@@ -32,6 +32,23 @@ internal static class Program
     {
         try
         {
+            if (Array.IndexOf(args, "--self-test") >= 0)
+            {
+                CanAtis.Io.PathProvider.SetAppDataPath(Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ceruleanavi.atis-for-can"));
+                using var airports = typeof(Program).Assembly.GetManifestResourceStream("CanAtis.Airports.json")
+                    ?? throw new InvalidOperationException("Bundled airports missing");
+                CanAtis.Voice.Audio.NativeAudio.Initialize();
+                if (!CanAtis.Voice.Audio.NativeAudio.IsAvailable)
+                    throw new InvalidOperationException("Native audio unavailable");
+                var worker = CanAtis.Io.BundledVoiceWorker.GetPath()
+                    ?? throw new InvalidOperationException("Bundled voice worker missing");
+                using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(worker, "--self-test")
+                    { UseShellExecute = false, CreateNoWindow = true });
+                if (process == null || !process.WaitForExit(30000) || process.ExitCode != 0)
+                    throw new InvalidOperationException("Voice worker self-test failed");
+                return;
+            }
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             VelopackApp.Build().OnFirstRun(OnFirstRun).OnRestarted(OnRestarted).Run();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args, Avalonia.Controls.ShutdownMode.OnExplicitShutdown);
@@ -39,6 +56,7 @@ internal static class Program
         catch (Exception ex)
         {
             Log.Fatal(ex, "Unhandled Exception");
+            Environment.ExitCode = 1;
         }
 
         Log.CloseAndFlush();

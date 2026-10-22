@@ -98,6 +98,26 @@ public class AtisStationViewModel : ReactiveViewModelBase, IDisposable, ISpokenT
     private DecodedMetar? _overrideMetar;
     private Timer? _publishAtisTimer;
     private Timer? _unrecordedAtisTimer;
+
+    /// <summary>Gets the current FSD connection state and round-trip latency.</summary>
+    public string FsdConnectionDescription => NetworkConnectionStatus switch
+    {
+        NetworkConnectionStatus.Connected => "已连接 · TCP · " +
+            (_networkConnection?.LatencyMs is double latency ? $"{latency:F0} ms" : "-- ms"),
+        NetworkConnectionStatus.Connecting => "连接中",
+        NetworkConnectionStatus.Observer => "观察中（未建立本机连接）",
+        _ => "未连接"
+    };
+
+    /// <summary>Gets the actual voice worker transport and keepalive latency.</summary>
+    public string VoiceConnectionDescription => _voiceServerConnection?.ConnectionDescription ?? "未连接";
+
+    /// <summary>Refreshes the live connection readouts.</summary>
+    public void RefreshConnectionDiagnostics()
+    {
+        this.RaisePropertyChanged(nameof(FsdConnectionDescription));
+        this.RaisePropertyChanged(nameof(VoiceConnectionDescription));
+    }
     private string? _lastBuiltAtisHubKey;
     private int _notamFreeTextOffset;
     private int _airportConditionsFreeTextOffset;
@@ -1687,7 +1707,7 @@ public class AtisStationViewModel : ReactiveViewModelBase, IDisposable, ISpokenT
             if (_appConfig.ConfigRequired)
             {
                 PublishConnectionError(ConnectionErrorReason.ConfigurationRequired,
-                    "The VATSIM user ID, password, and real name have not been set.");
+                    "请先设置 CAN ID、网络密码和姓名。");
 
                 if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime)
                 {
@@ -1695,7 +1715,7 @@ public class AtisStationViewModel : ReactiveViewModelBase, IDisposable, ISpokenT
                         return;
 
                     if (await MessageBox.ShowDialog(lifetime.MainWindow,
-                            $"It looks like you haven't set your VATSIM user ID, password, and real name yet. Would you like to set them now?",
+                            "尚未设置 CAN ID、网络密码和姓名，现在打开设置吗？",
                             "Confirm", MessageBoxButton.YesNo, MessageBoxIcon.Information) == MessageBoxResult.Yes)
                     {
                         EventBus.Instance.Publish(new OpenGenerateSettingsDialog());

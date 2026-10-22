@@ -283,12 +283,17 @@ public class App : Application
 
     private static void SetupLogging(bool debugMode)
     {
-        var logPath = Path.Combine(PathProvider.LogsFolderPath, "Log.txt");
+        Directory.CreateDirectory(PathProvider.LogsFolderPath);
+        var logPath = Path.Combine(PathProvider.LogsFolderPath, "can-atis-.log");
 
         var config = new LoggerConfiguration().WriteTo.File(
             logPath,
-            retainedFileCountLimit: 7,
-            rollingInterval: RollingInterval.Day);
+            retainedFileCountLimit: 30,
+            rollingInterval: RollingInterval.Day,
+            fileSizeLimitBytes: 20 * 1024 * 1024,
+            rollOnFileSizeLimit: true,
+            shared: true,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}");
 
         if (debugMode)
         {

@@ -61,9 +61,9 @@
     </Window.Resources>
     <Border x:Name="Root"
             CornerRadius="5"
-            BorderBrush="Black"
+            BorderBrush="{DynamicResource Brush.Border.Control}"
             BorderThickness="1"
-            Background="#323232"
+            Background="{DynamicResource Brush.Bg.Panel}"
             ClipToBounds="True">
         <Border.ContextMenu>
             <ContextMenu>

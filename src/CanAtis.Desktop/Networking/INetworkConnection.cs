@@ -14,6 +14,9 @@ namespace CanAtis.Networking;
 /// </summary>
 public interface INetworkConnection
 {
+    /// <summary>Gets the measured FSD round-trip time, if available.</summary>
+    public double? LatencyMs => null;
+
     /// <summary>
     /// Occurs when a network connection is successfully established.
     /// </summary>

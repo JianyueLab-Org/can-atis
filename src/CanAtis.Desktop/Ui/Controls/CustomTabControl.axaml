@@ -17,27 +17,31 @@
 	</Design.PreviewWith>
 	
 	<ControlTheme x:Key="{x:Type local:CustomTabControl}" TargetType="local:CustomTabControl">
-		<Setter Property="BorderBrush" Value="#646464"/>
+        <Setter Property="ItemsPanel">
+            <ItemsPanelTemplate><StackPanel Orientation="Vertical" /></ItemsPanelTemplate>
+        </Setter>
+		<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
 		<Setter Property="FocusAdorner" Value="{x:Null}"/>
 		<Setter Property="Template">
 			<ControlTemplate>
 				<DockPanel>
-					<ScrollViewer
+					<ScrollViewer Name="StationNavigation"
 						Theme="{StaticResource CustomTabControlScrollViewer}"
 						HorizontalScrollBarVisibility="Disabled"
 						VerticalScrollBarVisibility="Auto"
-						Width="150"
+						Background="{DynamicResource Brush.Bg.Panel}"
+						Width="168"
 						DockPanel.Dock="Left">
 						<ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}"/>
 					</ScrollViewer>
 					<Border Name="PART_TabControlBorder"
-							Margin="0,-1,0,0"
+							Margin="0"
 							ZIndex="0"
 							BorderBrush="{TemplateBinding BorderBrush}"
-							BorderThickness="1"
+							BorderThickness="0"
 							Background="Transparent">
 						<ContentPresenter Name="PART_SelectedContentHost"
-										  Padding="5"
+										  Padding="0"
                                           HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                           Content="{TemplateBinding SelectedContent}"

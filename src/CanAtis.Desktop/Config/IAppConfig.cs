@@ -13,6 +13,11 @@ namespace CanAtis.Config;
 public interface IAppConfig
 {
     /// <summary>
+    /// Gets or sets a value indicating whether station navigation is displayed along the top.
+    /// </summary>
+    public bool StationListOnTop { get; set; }
+
+    /// <summary>
     /// Gets or sets the user's real name.
     /// </summary>
     public string Name { get; set; }

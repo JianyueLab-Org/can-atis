@@ -16,8 +16,24 @@
         <converters:ConnectButtonLabelConverter x:Key="ConnectButtonLabelConverter"/>
 		<converters:ConnectButtonColorConverter x:Key="ConnectButtonColorConverter"/>
 	</UserControl.Resources>
-	<Border Background="#202637" Padding="14">
-		<Grid ColumnDefinitions="85,*,150" RowDefinitions="*,130,Auto">
+	<Border Background="{DynamicResource Brush.Bg.App}" Padding="12">
+        <DockPanel>
+            <Border DockPanel.Dock="Bottom" Background="{DynamicResource Brush.Bg.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0" Padding="8" Margin="0,10,0,0">
+                <WrapPanel Orientation="Horizontal">
+                    <TextBlock Text="FSD：" Foreground="{DynamicResource Brush.Text.Muted}" />
+                    <TextBlock Text="{Binding FsdConnectionDescription, DataType=vm:AtisStationViewModel}" Margin="0,0,20,0" />
+                    <TextBlock Text="语音：" Foreground="{DynamicResource Brush.Text.Muted}" />
+                    <TextBlock Text="{Binding VoiceConnectionDescription, DataType=vm:AtisStationViewModel}" />
+                </WrapPanel>
+            </Border>
+            <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,0,1" Padding="0,0,0,10" Margin="0,0,0,10">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="{Binding TabText, DataType=vm:AtisStationViewModel}" FontFamily="{DynamicResource Monospace}" FontSize="15" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding AtisStation.Name, DataType=vm:AtisStationViewModel}" Foreground="{DynamicResource Brush.Text.Muted}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel}" Foreground="{DynamicResource Brush.Info}" VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+		<Grid ColumnDefinitions="84,*,130" RowDefinitions="110,*,Auto">
 			<!--Atis Letter-->
 			<Button Name="AtisLetter" IsVisible="{Binding !IsAtisLetterInputMode, DataType=vm:AtisStationViewModel}" CornerRadius="3" Classes="AtisLetter" Foreground="White" Grid.Column="0" Grid.Row="0" Content="{Binding AtisLetter, DataType=vm:AtisStationViewModel, FallbackValue=A}" IsEnabled="True" FontFamily="{DynamicResource Monospace}">
 				<Button.ContentTemplate>
@@ -40,8 +56,8 @@
 			<Border Name="MetarBox" CornerRadius="3" BorderThickness="1" Grid.Column="1" Grid.Row="0" Margin="10,0,0,0" Padding="10" Classes.editing="{Binding IsMetarInputMode, DataType=vm:AtisStationViewModel}" Classes.overridden="{Binding IsMetarOverridden, DataType=vm:AtisStationViewModel}" Classes.invalid="{Binding HasMetarInputError, DataType=vm:AtisStationViewModel}">
 				<Border.Styles>
 					<Style Selector="Border#MetarBox">
-						<Setter Property="BorderBrush" Value="#646464"/>
-						<Setter Property="Background" Value="#1E1E1E"/>
+						<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Control}"/>
+						<Setter Property="Background" Value="{DynamicResource Brush.Bg.Control}"/>
 					</Style>
 					<Style Selector="Border#MetarBox.overridden">
 						<Setter Property="BorderBrush" Value="#FCBA03"/>
@@ -60,8 +76,8 @@
 				</Border.Styles>
 				<Border.ContextMenu>
 					<ContextMenu>
-						<MenuItem Header="Override METAR..." ToolTip.Tip="Replace the METAR used for this ATIS." Command="{Binding OverrideMetarCommand, DataType=vm:AtisStationViewModel}"/>
-						<MenuItem Header="Revert to Network METAR" ToolTip.Tip="Discard the override and use the METAR received from the network." Command="{Binding RevertMetarOverrideCommand, DataType=vm:AtisStationViewModel}"/>
+						<MenuItem Header="覆盖 METAR…" Command="{Binding OverrideMetarCommand, DataType=vm:AtisStationViewModel}"/>
+						<MenuItem Header="恢复网络 METAR" Command="{Binding RevertMetarOverrideCommand, DataType=vm:AtisStationViewModel}"/>
 					</ContextMenu>
 				</Border.ContextMenu>
 				<Panel>
@@ -74,7 +90,7 @@
 				</Panel>
 			</Border>
 			<!--Wind/Altimeter-->
-			<Border CornerRadius="3" BorderBrush="#646464" BorderThickness="1" Background="#1E1E1E" Grid.Column="2" Grid.Row="0" Margin="10,0,0,0">
+			<Border CornerRadius="4" BorderBrush="{DynamicResource Brush.Border.Control}" BorderThickness="1" Background="{DynamicResource Brush.Bg.Control}" Grid.Column="2" Grid.Row="0" Margin="10,0,0,0">
 				<StackPanel Orientation="Vertical" Spacing="3" HorizontalAlignment="Center" VerticalAlignment="Center">
 					<TextBlock FontFamily="{DynamicResource Monospace}" Foreground="White" FontSize="18" TextAlignment="Center" TextWrapping="Wrap" Text="{Binding Wind, DataType=vm:AtisStationViewModel}"/>
 					<TextBlock FontFamily="{DynamicResource Monospace}" Foreground="White" FontSize="18" TextAlignment="Center" TextWrapping="Wrap" Text="{Binding Altimeter, DataType=vm:AtisStationViewModel}"/>
@@ -83,7 +99,7 @@
 			<!--Airport Conditions/Notams-->
 			<Grid Grid.ColumnSpan="3" Grid.Column="0" Grid.Row="1" Margin="0,5,0,0" ColumnDefinitions="2*,10,2*" RowDefinitions="Auto,*">
 				<!--Airport Conditions-->
-                <Button Grid.Column="0" Grid.Row="0" Theme="{StaticResource HyperlinkButton}" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,0,5" Command="{Binding OpenStaticAirportConditionsDialogCommand, DataType=vm:AtisStationViewModel}">AIRPORT CONDITIONS</Button>
+                <Button Grid.Column="0" Grid.Row="0" Theme="{StaticResource HyperlinkButton}" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,0,5" Command="{Binding OpenStaticAirportConditionsDialogCommand, DataType=vm:AtisStationViewModel}">机场情况</Button>
 				<editor:TextEditor Name="AirportConditions" Grid.Row="1" Grid.Column="0" Document="{Binding AirportConditionsTextDocument, DataType=vm:AtisStationViewModel}" WordWrap="True" ShowLineNumbers="False" HorizontalAlignment="Stretch" FontFamily="{StaticResource Monospace}" Padding="4" TextChanged="AirportConditions_OnTextChanged" IsReadOnly="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static networking:NetworkConnectionStatus.Observer}}">
 					<Interaction.Behaviors>
 						<behaviors:TextEditorUpperCaseBehavior/>
@@ -97,7 +113,7 @@
                     </editor:TextEditor.ContextMenu>
 				</editor:TextEditor>
 				<!--Notams-->
-                <Button Grid.Column="2" Grid.Row="0" Theme="{StaticResource HyperlinkButton}" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,0,5" Command="{Binding OpenStaticNotamsDialogCommand, DataType=vm:AtisStationViewModel}">NOTAMS</Button>
+                <Button Grid.Column="2" Grid.Row="0" Theme="{StaticResource HyperlinkButton}" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,0,5" Command="{Binding OpenStaticNotamsDialogCommand, DataType=vm:AtisStationViewModel}">航行通告</Button>
 				<editor:TextEditor Name="NotamText" Grid.Row="1" Grid.Column="2" Document="{Binding NotamsTextDocument, DataType=vm:AtisStationViewModel}" WordWrap="True" ShowLineNumbers="False" HorizontalAlignment="Stretch" FontFamily="{StaticResource Monospace}" Padding="4" TextChanged="NotamText_OnTextChanged" IsReadOnly="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static networking:NetworkConnectionStatus.Observer}}">
 					<Interaction.Behaviors>
 						<behaviors:TextEditorUpperCaseBehavior/>
@@ -114,7 +130,7 @@
 			<!--Bottom Toolbar-->
 			<Grid Grid.ColumnSpan="3" Grid.Column="0" Grid.Row="2" Margin="0,10,0,0" ColumnDefinitions="120,*,90,120"
 			      RowDefinitions="30">
-				<Button Command="{Binding VoiceRecordAtisCommand, DataType=vm:AtisStationViewModel}" Theme="{StaticResource Dark}" Content="RECORD ATIS" Grid.Column="0" Margin="0,0,5,0">
+				<Button Command="{Binding VoiceRecordAtisCommand, DataType=vm:AtisStationViewModel}" Theme="{StaticResource Dark}" Content="录制 ATIS" Grid.Column="0" Margin="0,0,5,0">
                     <Interaction.Behaviors>
                         <behaviors:RecordAtisButtonBehavior RecordedAtisState="{Binding RecordedAtisState, DataType=vm:AtisStationViewModel}" BlinkOnColor="#004696" BlinkOffColor="#323232"/>
                     </Interaction.Behaviors>
@@ -135,6 +151,7 @@
 				<Button Grid.Column="3" Margin="5,0,0,0" Theme="{StaticResource Dark}" Content="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource ConnectButtonLabelConverter}, FallbackValue=CONNECT}" Command="{Binding NetworkConnectCommand, DataType=vm:AtisStationViewModel}" Background="{Binding NetworkConnectionStatus, DataType=vm:AtisStationViewModel, Converter={StaticResource ConnectButtonColorConverter}}" />
 			</Grid>
 		</Grid>
+        </DockPanel>
 	</Border>
 	<UserControl.Styles>
 		<!-- Draw the typed letter where the letter button draws it, so it does not jump when the letter is accepted. -->
@@ -144,8 +161,8 @@
 		<Style Selector="Button.AtisLetter">
 			<Setter Property="FontSize" Value="60"/>
 			<Setter Property="FontWeight" Value="Medium"/>
-			<Setter Property="Background" Value="#1E1E1E"/>
-			<Setter Property="BorderBrush" Value="#646464"/>
+			<Setter Property="Background" Value="{DynamicResource Brush.Bg.Control}"/>
+			<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Control}"/>
 			<Setter Property="CornerRadius" Value="0"/>
 			<Setter Property="Foreground" Value="White"/>
 			<Setter Property="HorizontalAlignment" Value="Stretch"/>

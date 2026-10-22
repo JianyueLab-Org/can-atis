@@ -22,7 +22,7 @@ public static class PathProvider
     /// <summary>
     /// Gets the folder path for logs.
     /// </summary>
-    public static string LogsFolderPath => Path.Combine(s_appDataPath, "Logs");
+    public static string LogsFolderPath => Path.Combine(System.AppContext.BaseDirectory, "Logs");
 
     /// <summary>
     /// Gets the folder path for profiles.

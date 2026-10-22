@@ -12,15 +12,23 @@
         <AssemblyName>atis-for-can</AssemblyName>
         <RootNamespace>CanAtis</RootNamespace>
 		<ApplicationIcon>Assets\MainIcon.ico</ApplicationIcon>
-        <Version>1.0.0</Version>
+        <Version>0.0.1</Version>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' != 'Debug'">
 		<SelfContained>true</SelfContained>
 		<PublishSingleFile>true</PublishSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<DebugType>embedded</DebugType>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<EmbeddedResource Include="$(VoiceWorkerExe)" LogicalName="CanAtis.VoiceWorker.exe" Condition="'$(VoiceWorkerExe)' != '' And Exists('$(VoiceWorkerExe)')" />
+        <EmbeddedResource Include="Data\airports.json" LogicalName="CanAtis.Airports.json" />
+        <EmbeddedResource Include="Voice\Audio\Native\win\NativeAudio.dll" LogicalName="CanAtis.NativeAudio.dll" Condition="Exists('Voice\Audio\Native\win\NativeAudio.dll')" />
 		<AvaloniaResource Include="Assets\**" />
 		<ContentWithTargetPath Include="Assets\MainIcon.ico">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

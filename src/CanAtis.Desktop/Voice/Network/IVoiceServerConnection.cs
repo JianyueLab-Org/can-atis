@@ -15,6 +15,9 @@ namespace CanAtis.Voice.Network;
 /// </summary>
 public interface IVoiceServerConnection
 {
+    /// <summary>Gets the live voice connection state.</summary>
+    public string ConnectionDescription => "未连接";
+
     /// <summary>
     /// Establishes a connection to the voice server.
     /// </summary>

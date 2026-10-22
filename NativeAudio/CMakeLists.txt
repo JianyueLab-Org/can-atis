@@ -6,7 +6,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(NativeAudio)
 
-set(NATIVE_DLL_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/../vATIS.Desktop/Voice/Audio/Native" CACHE PATH "Path to copy built library")
+set(NATIVE_DLL_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/../src/CanAtis.Desktop/Voice/Audio/Native" CACHE PATH "Path to copy built library")
 
 if(APPLE)
     # Disable runtime linking to prevent issues with backends that are not actually implemented

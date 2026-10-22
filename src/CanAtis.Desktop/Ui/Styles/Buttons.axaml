@@ -210,9 +210,9 @@
 		<Setter Property="VerticalContentAlignment" Value="Center"/>
 		<Setter Property="Padding" Value="10,3"/>
 		<Setter Property="CornerRadius" Value="4"/>
-		<Setter Property="Foreground" Value="White"/>
-		<Setter Property="Background" Value="#25324A"/>
-		<Setter Property="BorderBrush" Value="#3F5275"/>
+		<Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+		<Setter Property="Background" Value="{DynamicResource Brush.Bg.Control}"/>
+		<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Control}"/>
 		<Setter Property="BorderThickness" Value="1"/>
 		<Setter Property="Transitions" Value="{x:Null}"/>
 		<Setter Property="RenderTransform" Value="{x:Null}"/>
@@ -268,8 +268,8 @@
 		<Setter Property="Padding" Value="10,3"/>
 		<Setter Property="CornerRadius" Value="4"/>
 		<Setter Property="Foreground" Value="White"/>
-		<Setter Property="Background" Value="#323232"/>
-		<Setter Property="BorderBrush" Value="#646464"/>
+		<Setter Property="Background" Value="{DynamicResource Brush.Bg.Control}"/>
+		<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Control}"/>
 		<Setter Property="BorderThickness" Value="1"/>
 		<Setter Property="Transitions" Value="{x:Null}"/>
 		<Setter Property="RenderTransform" Value="{x:Null}"/>
@@ -313,8 +313,8 @@
 			<Setter Property="BorderBrush" Value="{TemplateBinding BorderBrush}"/>
 		</Style>
 		<Style Selector="^:checked /template/ ContentPresenter">
-			<Setter Property="Background" Value="#2D829B"/>
-			<Setter Property="BorderBrush" Value="#5EB1BF"/>
+			<Setter Property="Background" Value="{DynamicResource Brush.Accent.Subtle}"/>
+			<Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
 		</Style>
 	</ControlTheme>
 

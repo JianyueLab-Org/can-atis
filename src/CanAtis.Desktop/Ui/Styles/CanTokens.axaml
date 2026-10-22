@@ -1,0 +1,27 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Adapted from JianyueLab-Org/can-client-ui, AtisClient/Styles/Theme/Tokens.axaml
+         revision ee728d7e775cb692c3d5f6dbf5fd14dd7e9acd0f (Avalonia 11 compatibility). -->
+    <SolidColorBrush x:Key="Brush.Bg.App" Color="#141518" />
+    <SolidColorBrush x:Key="Brush.Bg.Panel" Color="#1A1B1F" />
+    <SolidColorBrush x:Key="Brush.Bg.Control" Color="#212328" />
+    <SolidColorBrush x:Key="Brush.Bg.Hover" Color="#292B31" />
+    <SolidColorBrush x:Key="Brush.Bg.Active" Color="#30333A" />
+    <SolidColorBrush x:Key="Brush.Bg.Overlay" Color="#99000000" />
+    <SolidColorBrush x:Key="Brush.Border" Color="#26282D" />
+    <SolidColorBrush x:Key="Brush.Border.Control" Color="#34373E" />
+    <SolidColorBrush x:Key="Brush.Border.Hover" Color="#464A52" />
+    <SolidColorBrush x:Key="Brush.Text" Color="#D5D8DD" />
+    <SolidColorBrush x:Key="Brush.Text.Muted" Color="#8B9098" />
+    <SolidColorBrush x:Key="Brush.Text.Dim" Color="#5E636B" />
+    <SolidColorBrush x:Key="Brush.Accent" Color="#4C8BF5" />
+    <SolidColorBrush x:Key="Brush.Accent.Subtle" Color="#334C8BF5" />
+    <SolidColorBrush x:Key="Brush.Success" Color="#3DBE84" />
+    <SolidColorBrush x:Key="Brush.Warning" Color="#D9A441" />
+    <SolidColorBrush x:Key="Brush.Danger" Color="#E5534B" />
+    <SolidColorBrush x:Key="Brush.Info" Color="#5BC0D8" />
+    <SolidColorBrush x:Key="Brush.Frequency" Color="#7CD49B" />
+    <FontFamily x:Key="Font.UI">Microsoft YaHei UI, PingFang SC, Noto Sans CJK SC, Segoe UI, sans-serif</FontFamily>
+    <FontFamily x:Key="Font.Mono">Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, Microsoft YaHei UI, monospace</FontFamily>
+    <Color x:Key="SystemAccentColor">#4C8BF5</Color>
+</ResourceDictionary>

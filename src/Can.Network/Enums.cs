@@ -75,7 +75,8 @@ public enum NetworkFacility
     Gnd,
     Twr,
     App,
-    Ctr
+    Ctr,
+    Atis
 }
 
 [Serializable]

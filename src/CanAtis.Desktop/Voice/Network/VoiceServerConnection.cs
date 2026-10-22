@@ -36,6 +36,13 @@ public class VoiceServerConnection : IVoiceServerConnection
     private Timer? _heartbeatTimer;
     private string? _jwtToken;
     private Process? _mumbleWorker;
+    private string _connectionDescription = "未连接";
+    private long _lastStatus;
+
+    /// <inheritdoc />
+    public string ConnectionDescription => _connectionDescription.StartsWith("已连接", StringComparison.Ordinal) &&
+        System.Diagnostics.Stopwatch.GetElapsedTime(System.Threading.Interlocked.Read(ref _lastStatus)).TotalSeconds > 5
+        ? "连接中断（状态超时）" : _connectionDescription;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VoiceServerConnection"/> class.
@@ -81,7 +88,8 @@ public class VoiceServerConnection : IVoiceServerConnection
 
         cancellationToken.ThrowIfCancellationRequested();
         StopMumbleWorker();
-        var worker = WorkerPath();
+        var bundled = BundledVoiceWorker.GetPath();
+        var worker = bundled ?? WorkerPath();
         if (!File.Exists(worker))
             throw new AtisBuilderException($"CAN Mumble worker is missing: {worker}");
 
@@ -90,7 +98,7 @@ public class VoiceServerConnection : IVoiceServerConnection
         var password = _appConfig.PasswordDecrypted;
         var psi = new ProcessStartInfo
         {
-            FileName = PythonPath(),
+            FileName = bundled ?? PythonPath(),
             WorkingDirectory = Path.GetDirectoryName(worker) ?? AppContext.BaseDirectory,
             UseShellExecute = false,
             RedirectStandardInput = true,
@@ -98,19 +106,74 @@ public class VoiceServerConnection : IVoiceServerConnection
             RedirectStandardError = true,
             CreateNoWindow = true
         };
-        psi.ArgumentList.Add(worker);
+        if (bundled == null)
+            psi.ArgumentList.Add(worker);
         psi.ArgumentList.Add("--host"); psi.ArgumentList.Add("audio.ceruleanavi.net");
         psi.ArgumentList.Add("--port"); psi.ArgumentList.Add("64738");
         psi.ArgumentList.Add("--cid"); psi.ArgumentList.Add(cid);
-        psi.ArgumentList.Add("--password"); psi.ArgumentList.Add(password);
+        psi.Environment["CAN_VOICE_PASSWORD"] = password;
         psi.ArgumentList.Add("--callsign"); psi.ArgumentList.Add(callsign);
         psi.ArgumentList.Add("--frequency"); psi.ArgumentList.Add(frequency.ToString());
-        _mumbleWorker = Process.Start(psi);
-        if (_mumbleWorker is null)
+        var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
+        _mumbleWorker = process;
+        _connectionDescription = "连接中";
+        process.OutputDataReceived += (_, e) =>
+        {
+            if (!ReferenceEquals(_mumbleWorker, process) || string.IsNullOrWhiteSpace(e.Data))
+                return;
+            try
+            {
+                using var json = JsonDocument.Parse(e.Data);
+                var root = json.RootElement;
+                var state = root.GetProperty("state").GetString();
+                var description = state switch
+                {
+                    "connected" => $"已连接 · {root.GetProperty("transport").GetString()} · " +
+                        (root.GetProperty("latency").ValueKind == JsonValueKind.Number
+                            ? $"{root.GetProperty("latency").GetDouble():F0} ms" : "-- ms"),
+                    "connecting" => "连接中",
+                    "error" => "连接失败 · " + root.GetProperty("message").GetString(),
+                    _ => "未连接"
+                };
+                System.Threading.Interlocked.Exchange(ref _lastStatus, System.Diagnostics.Stopwatch.GetTimestamp());
+                if (_connectionDescription != description)
+                    Log.Information("Voice {Callsign}: {Status}", callsign, description);
+                _connectionDescription = description;
+            }
+            catch (JsonException)
+            {
+                Log.Debug("Voice worker: {Output}", e.Data);
+            }
+        };
+        process.ErrorDataReceived += (_, e) =>
+        {
+            if (!string.IsNullOrWhiteSpace(e.Data))
+                Log.Warning("Voice worker {Callsign}: {Error}", callsign, e.Data.Replace(password, "[redacted]"));
+        };
+        process.Exited += (_, _) =>
+        {
+            if (ReferenceEquals(_mumbleWorker, process))
+            {
+                _connectionDescription = "未连接（语音进程已退出）";
+                Log.Warning("Voice worker exited: {Callsign}, code {ExitCode}", callsign, process.ExitCode);
+            }
+        };
+        if (!process.Start())
             throw new AtisBuilderException("Could not start the CAN Mumble worker.");
-        await _mumbleWorker.StandardInput.BaseStream.WriteAsync(dto.PcmData, cancellationToken);
-        await _mumbleWorker.StandardInput.BaseStream.FlushAsync(cancellationToken);
-        _mumbleWorker.StandardInput.Close();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        try
+        {
+            await process.StandardInput.BaseStream.WriteAsync(dto.PcmData, cancellationToken);
+            await process.StandardInput.BaseStream.FlushAsync(cancellationToken);
+            process.StandardInput.Close();
+        }
+        catch
+        {
+            if (ReferenceEquals(_mumbleWorker, process))
+                StopMumbleWorker();
+            throw;
+        }
         Log.Information("started CAN Mumble worker for {Callsign} on {Frequency}", callsign, frequency);
     }
 
@@ -177,13 +240,16 @@ public class VoiceServerConnection : IVoiceServerConnection
 
     private void StopMumbleWorker()
     {
-        if (_mumbleWorker is null)
+        var process = _mumbleWorker;
+        _mumbleWorker = null;
+        _connectionDescription = "未连接";
+        if (process is null)
             return;
         try
         {
-            if (!_mumbleWorker.HasExited)
-                _mumbleWorker.Kill(true);
-            _mumbleWorker.Dispose();
+            if (!process.HasExited)
+                process.Kill(true);
+            process.Dispose();
         }
         catch (Exception ex)
         {

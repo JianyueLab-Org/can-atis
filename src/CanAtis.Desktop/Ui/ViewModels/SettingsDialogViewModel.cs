@@ -4,14 +4,12 @@
 // </copyright>
 
 using System;
-using System.Collections.ObjectModel;
 using System.Reactive;
 using ReactiveUI;
 using Can.Network;
 using CanAtis.Config;
 using CanAtis.Events;
 using CanAtis.Events.EventBus;
-using CanAtis.Ui.Common;
 
 namespace CanAtis.Ui.ViewModels;
 
@@ -24,12 +22,11 @@ public class SettingsDialogViewModel : ReactiveViewModelBase, IDisposable
     private string? _name;
     private string? _userId;
     private string? _password;
-    private string? _selectedNetworkRating;
-    private ObservableCollection<ComboBoxItemMeta>? _networkRatings;
     private bool _muteOwnAtisUpdateSound;
     private bool _muteSharedAtisUpdateSound;
     private bool _autoFetchAtisLetter;
     private bool _autoFetchDatis;
+    private bool _stationListOnTop;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SettingsDialogViewModel"/> class.
@@ -44,25 +41,9 @@ public class SettingsDialogViewModel : ReactiveViewModelBase, IDisposable
         Password = _appConfig.PasswordDecrypted;
         MuteOwnAtisUpdateSound = _appConfig.MuteOwnAtisUpdateSound;
         MuteSharedAtisUpdateSound = _appConfig.MuteSharedAtisUpdateSound;
-        SelectedNetworkRating = _appConfig.NetworkRating.ToString();
         AutoFetchAtisLetter = _appConfig.AutoFetchAtisLetter;
         AutoFetchDatis = _appConfig.AutoFetchDatis;
-
-        NetworkRatings =
-        [
-            new ComboBoxItemMeta("Observer", "OBS"),
-            new ComboBoxItemMeta("Student 1", "S1"),
-            new ComboBoxItemMeta("Student 2", "S2"),
-            new ComboBoxItemMeta("Student 3", "S3"),
-            new ComboBoxItemMeta("Controller 1", "C1"),
-            new ComboBoxItemMeta("Controller 2", "C2"),
-            new ComboBoxItemMeta("Controller 3", "C3"),
-            new ComboBoxItemMeta("Instructor 1", "I1"),
-            new ComboBoxItemMeta("Instructor 2", "I2"),
-            new ComboBoxItemMeta("Instructor 3", "I3"),
-            new ComboBoxItemMeta("Supervisor", "SUP"),
-            new ComboBoxItemMeta("Administrator", "ADM"),
-        ];
+        StationListOnTop = _appConfig.StationListOnTop;
 
         SaveSettingsCommand = ReactiveCommand.Create<ICloseable>(SaveSettings);
     }
@@ -71,6 +52,15 @@ public class SettingsDialogViewModel : ReactiveViewModelBase, IDisposable
     /// Gets the command used to save the user settings and close the associated dialog.
     /// </summary>
     public ReactiveCommand<ICloseable, Unit> SaveSettingsCommand { get; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether station navigation is displayed along the top.
+    /// </summary>
+    public bool StationListOnTop
+    {
+        get => _stationListOnTop;
+        set => this.RaiseAndSetIfChanged(ref _stationListOnTop, value);
+    }
 
     /// <summary>
     /// Gets or sets the name associated with the current user configuration.
@@ -97,24 +87,6 @@ public class SettingsDialogViewModel : ReactiveViewModelBase, IDisposable
     {
         get => _password;
         set => this.RaiseAndSetIfChanged(ref _password, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the currently selected network rating in the settings dialog.
-    /// </summary>
-    public string? SelectedNetworkRating
-    {
-        get => _selectedNetworkRating;
-        set => this.RaiseAndSetIfChanged(ref _selectedNetworkRating, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the collection of network ratings available for selection.
-    /// </summary>
-    public ObservableCollection<ComboBoxItemMeta>? NetworkRatings
-    {
-        get => _networkRatings;
-        set => this.RaiseAndSetIfChanged(ref _networkRatings, value);
     }
 
     /// <summary>
@@ -178,11 +150,9 @@ public class SettingsDialogViewModel : ReactiveViewModelBase, IDisposable
         _appConfig.MuteSharedAtisUpdateSound = MuteSharedAtisUpdateSound;
         _appConfig.AutoFetchAtisLetter = AutoFetchAtisLetter;
         _appConfig.AutoFetchDatis = AutoFetchDatis;
+        _appConfig.StationListOnTop = StationListOnTop;
 
-        if (Enum.TryParse(SelectedNetworkRating, out NetworkRating selectedNetworkRating))
-        {
-            _appConfig.NetworkRating = selectedNetworkRating;
-        }
+        _appConfig.NetworkRating = NetworkRating.Obs;
 
         _appConfig.SaveConfig();
 

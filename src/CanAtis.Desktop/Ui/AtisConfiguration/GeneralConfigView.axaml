@@ -17,7 +17,7 @@
 	</UserControl.Resources>
 	<StackPanel Spacing="8">
 		<StackPanel>
-			<Border Background="#1E1E1E" BorderBrush="#646464" BorderThickness="1" CornerRadius="4" Padding="10">
+			<Border Background="{DynamicResource Brush.Bg.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="4" Padding="10">
 				<StackPanel Spacing="5">
 					<TextBlock Text="Frequency:"/>
 					<TextBox FontFamily="{StaticResource Monospace}" Name="Frequency" Text="{Binding Frequency, DataType=vm:GeneralConfigViewModel}" Theme="{StaticResource DarkTextBox}">
@@ -30,7 +30,7 @@
 			</Border>
 		</StackPanel>
 		<StackPanel>
-			<Border Background="#1E1E1E" BorderBrush="#646464" BorderThickness="1" CornerRadius="4" Padding="10">
+			<Border Background="{DynamicResource Brush.Bg.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="4" Padding="10">
 				<StackPanel Spacing="5">
 					<Grid ColumnDefinitions="*,*">
 						<StackPanel Grid.Column="0" Spacing="5">
@@ -108,7 +108,7 @@
 			</Border>
 		</StackPanel>
 		<StackPanel>
-			<Border Background="#1E1E1E" BorderBrush="#646464" BorderThickness="1" CornerRadius="4" Padding="10">
+			<Border Background="{DynamicResource Brush.Bg.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="4" Padding="10">
 				<StackPanel Orientation="Vertical" Spacing="10">
 					<Grid ColumnDefinitions="150,280,20,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
                         <RadioButton Grid.Row="0" Grid.Column="0" Theme="{StaticResource RadioButton}" Content="Text to Speech" Name="UseTextToSpeech" IsChecked="{Binding UseTextToSpeech, DataType=vm:GeneralConfigViewModel}" ToolTip.Tip="Use the Windows SAPI voice installed on this computer."/>
@@ -127,7 +127,7 @@
 			</Border>
 		</StackPanel>
 		<StackPanel>
-			<Border Background="#1E1E1E" BorderBrush="#646464" BorderThickness="1" CornerRadius="4" Padding="10">
+			<Border Background="{DynamicResource Brush.Bg.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="4" Padding="10">
 				<StackPanel Spacing="5">
 					<TextBlock Text="IDS Endpoint:"/>
 					<TextBox FontFamily="{StaticResource Monospace}" Name="IdsEndpoint" Text="{Binding IdsEndpoint, DataType=vm:GeneralConfigViewModel}" Theme="{StaticResource DarkTextBox}">

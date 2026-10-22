@@ -16,7 +16,7 @@
             <Setter Property="IsVisible" Value="False"/>
         </Style>
     </UserControl.Styles>
-    <Border Background="#1E1E1E" BorderBrush="#646464" BorderThickness="1" CornerRadius="4" Padding="10">
+    <Border Background="{DynamicResource Brush.Bg.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="4" Padding="10">
 		<Grid RowDefinitions="Auto,*">
 		<StackPanel Grid.Row="0" Orientation="Vertical">
 			<Grid ColumnDefinitions="*,Auto">

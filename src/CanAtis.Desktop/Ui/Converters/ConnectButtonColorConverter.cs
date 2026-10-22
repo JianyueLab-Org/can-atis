@@ -21,10 +21,10 @@ public class ConnectButtonColorConverter : IValueConverter
     {
         if (value is NetworkConnectionStatus flag)
         {
-            return flag == NetworkConnectionStatus.Connected ? "#004696" : "#323232";
+            return flag == NetworkConnectionStatus.Connected ? "#30333A" : "#4C8BF5";
         }
 
-        return "#323232";
+        return "#4C8BF5";
     }
 
     /// <inheritdoc/>

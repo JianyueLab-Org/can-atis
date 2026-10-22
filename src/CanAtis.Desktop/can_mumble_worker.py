@@ -8,8 +8,11 @@ import argparse
 import os
 import sys
 import time
+import json
+import threading
+import math
 
-base = os.path.dirname(os.path.abspath(__file__))
+base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
 python_dir = os.path.dirname(sys.executable)
 sys.path.insert(0, base)
 os.environ["PATH"] = (base + os.pathsep + python_dir + os.pathsep +
@@ -22,6 +25,21 @@ from pymumble_py3 import messages
 from pymumble_py3.constants import PYMUMBLE_CLBK_CONNECTED
 
 
+def transport_status(mumble):
+    """Reused from CAN Python voice.transport_status (MSFS/controller clients)."""
+    udp = getattr(mumble, "udp_active", False)
+    stats = getattr(mumble, "udp_ping_stats" if udp else "ping_stats", {})
+    rtt = stats.get("avg") if stats.get("nb", 0) > 0 else None
+    if rtt is not None and (not math.isfinite(rtt) or rtt < 0):
+        rtt = None
+    return "UDP" if udp else "TCP", rtt
+
+
+def report(state, transport=None, latency=None, message=None):
+    print(json.dumps(dict(state=state, transport=transport, latency=latency,
+                          message=message)), flush=True)
+
+
 def find_channel(mumble, name):
     try:
         return mumble.channels.find_by_name(name)
@@ -30,11 +48,17 @@ def find_channel(mumble, name):
 
 
 def main():
+    if "--self-test" in sys.argv:
+        class Fake:
+            udp_active = True
+            udp_ping_stats = {"nb": 1, "avg": 23.5}
+        assert transport_status(Fake()) == ("UDP", 23.5)
+        report("ready")
+        return 0
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", required=True)
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--cid", required=True)
-    parser.add_argument("--password", required=True)
     parser.add_argument("--callsign", required=True)
     parser.add_argument("--frequency", required=True)
     args = parser.parse_args()
@@ -47,8 +71,10 @@ def main():
         return 2
 
     connected = False
-    mumble = pymumble.Mumble(args.host, user, password=args.password,
+    report("connecting")
+    mumble = pymumble.Mumble(args.host, user, password=os.environ.pop("CAN_VOICE_PASSWORD", ""),
                              port=args.port, reconnect=False)
+    mumble.set_receive_sound(True)
 
     def on_connected():
         nonlocal connected
@@ -60,6 +86,7 @@ def main():
     while not connected and time.time() < deadline:
         time.sleep(0.05)
     if not connected:
+        report("error", message="语音连接失败或超时")
         mumble.stop()
         return 3
 
@@ -72,6 +99,7 @@ def main():
             channel = find_channel(mumble, channel_name)
             time.sleep(0.05)
     if channel is None:
+        report("error", message="无法创建语音频道")
         mumble.stop()
         return 4
 
@@ -84,27 +112,32 @@ def main():
         while mumble.users.myself["channel_id"] != channel_id and time.time() < deadline:
             time.sleep(0.05)
     if mumble.users.myself["channel_id"] != channel_id:
+        report("error", message="无法加入语音频道")
         mumble.stop()
         return 5
 
-    frame_bytes = 960 * 2
-    for offset in range(0, len(pcm), frame_bytes):
-        frame = pcm[offset:offset + frame_bytes]
-        if len(frame) < frame_bytes:
-            frame += b"\x00" * (frame_bytes - len(frame))
-        mumble.sound_output.add_sound(frame)
-        time.sleep(0.02)
+    def monitor():
+        while mumble.is_alive():
+            transport, rtt = transport_status(mumble)
+            report("connected", transport, rtt)
+            time.sleep(1)
+        report("disconnected")
 
-    deadline = time.time() + 5
-    while time.time() < deadline:
-        try:
-            if mumble.sound_output.get_buffer_size() <= 0:
-                break
-        except Exception:
-            break
-        time.sleep(0.05)
-    mumble.stop()
-    return 0
+    threading.Thread(target=monitor, daemon=True).start()
+    frame_bytes = 960 * 2
+    while mumble.is_alive():
+        for offset in range(0, len(pcm), frame_bytes):
+            if not mumble.is_alive():
+                report("disconnected")
+                return 6
+            while mumble.sound_output.get_buffer_size() > 0.2 and mumble.is_alive():
+                time.sleep(0.02)
+            frame = pcm[offset:offset + frame_bytes]
+            frame += b"\x00" * (frame_bytes - len(frame))
+            mumble.sound_output.add_sound(frame)
+            time.sleep(0.02)
+    report("disconnected")
+    return 6
 
 
 if __name__ == "__main__":

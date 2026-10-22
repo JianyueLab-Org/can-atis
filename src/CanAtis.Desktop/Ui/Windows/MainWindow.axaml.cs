@@ -246,6 +246,23 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         WindowState = WindowState.Minimized;
     }
 
+    private void OnOpenLogs(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Directory.CreateDirectory(CanAtis.Io.PathProvider.LogsFolderPath);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = CanAtis.Io.PathProvider.LogsFolderPath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Could not open the log folder");
+        }
+    }
+
     private void OnPositionChanged(object? sender, PixelPointEventArgs e)
     {
         ViewModel?.UpdatePosition(this);

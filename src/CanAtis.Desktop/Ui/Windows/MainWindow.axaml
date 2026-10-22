@@ -1,78 +1,72 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-		xmlns:controls="using:CanAtis.Ui.Controls"
-		xmlns:components="using:CanAtis.Ui.Components"
+        xmlns:controls="using:CanAtis.Ui.Controls"
+        xmlns:components="using:CanAtis.Ui.Components"
         xmlns:vm="using:CanAtis.Ui.ViewModels"
-		mc:Ignorable="d"
         x:Class="CanAtis.Ui.Windows.MainWindow"
-        Height="560"
-        Width="1120"
-        MinHeight="420"
-        MinWidth="760"
-        SystemDecorations="None"
-		WindowStartupLocation="CenterScreen"
-        TransparencyLevelHint="Transparent"
-		CanResize="True"
-        PointerPressed="OnWindowPointerPressed"
-        PointerMoved="OnWindowPointerMoved"
-        PointerExited="OnWindowPointerExited"
-        Background="Transparent"
-        Title="ATIS for CAN"
-		Icon="/Assets/MainIcon.ico"
-		Topmost="{Binding IsTopMost, DataType=vm:TopMostViewModel, Source={x:Static vm:TopMostViewModel.Instance}}">
-	<Border CornerRadius="5"
-			BorderBrush="Black"
-			BorderThickness="1"
-            Background="#202637"
-			ClipToBounds="True">
-		<Grid RowDefinitions="45,*" ColumnDefinitions="150,*" ClipToBounds="True">
-			<Grid x:Name="Overlay" Grid.ColumnSpan="2" Grid.RowSpan="2" ZIndex="100" IsVisible="{Binding ShowOverlay, DataType=vm:MainWindowViewModel, FallbackValue=False}">
-				<Border Background="#000000" Opacity="0.80"/>
-			</Grid>
-            <Border Grid.Row="0" Grid.ColumnSpan="2" Grid.Column="0" Background="#161B2B" CornerRadius="5,5,0,0" HorizontalAlignment="Stretch" PointerPressed="OnPointerPressed" DoubleTapped="OnDoubleTapped">
-				<Grid>
-					<StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                        <TextBlock Text="CAN ATIS" Foreground="#5EB1BF" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="14,0,18,0"/>
-                        <Button Theme="{StaticResource Dark}" Margin="0,8" Content="用户设置" Command="{Binding OpenSettingsDialogCommand, DataType=vm:MainWindowViewModel}"/>
-                        <Button Theme="{StaticResource Dark}" Margin="6,8" Content="通播配置" Command="{Binding OpenProfileConfigurationWindowCommand, DataType=vm:MainWindowViewModel}"/>
-					</StackPanel>
-					<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10,0">
-						<TextBlock VerticalAlignment="Center"
-								   Padding="10,0"
-                                   Foreground="#5EB1BF"
-								   FontSize="26"
-								   FontFamily="{StaticResource Monospace}"
-								   Text="{Binding CurrentTime, DataType=vm:MainWindowViewModel, FallbackValue=0000/00}"/>
-						<ToggleButton Theme="{StaticResource PinButton}" Margin="5,8" Command="{Binding ToggleIsTopMost, DataType=vm:TopMostViewModel, Source={x:Static vm:TopMostViewModel.Instance}}" IsChecked="{Binding IsTopMost, Mode=OneWay, Source={x:Static vm:TopMostViewModel.Instance}}" />
-						<Button Theme="{StaticResource MiniWindowButton}" Margin="0,8" Command="{Binding InvokeMiniWindowCommand, DataType=vm:MainWindowViewModel}" />
-						<Button Theme="{StaticResource MinimizeButton}" Margin="5,8" Click="OnMinimizeWindow" />
-						<Button Theme="{StaticResource CloseButton}" Margin="0,8" Command="{Binding EndClientSessionCommand, DataType=vm:MainWindowViewModel}"/>
-					</StackPanel>
-				</Grid>
-			</Border>
-            <controls:CustomTabControl Name="AtisStations" Margin="10" Grid.Row="1" Grid.ColumnSpan="2" IsVisible="{Binding AtisStations.Count, DataType=vm:MainWindowViewModel, FallbackValue=False}" ItemsSource="{Binding AtisStations, DataType=vm:MainWindowViewModel}" SelectedIndex="{Binding SelectedTabIndex, DataType=vm:MainWindowViewModel}">
-				<controls:CustomTabControl.ItemsPanel>
-					<ItemsPanelTemplate>
-						<StackPanel Orientation="Vertical" />
-					</ItemsPanelTemplate>
-				</controls:CustomTabControl.ItemsPanel>
-				<controls:CustomTabControl.ItemContainerTheme>
-					<ControlTheme TargetType="{x:Type controls:CustomTabItem}" BasedOn="{StaticResource {x:Type controls:CustomTabItem}}"/>
-				</controls:CustomTabControl.ItemContainerTheme>
-				<TabControl.ContentTemplate>
-					<DataTemplate DataType="{x:Type vm:AtisStationViewModel}">
-						<components:AtisStationView ViewModel="{Binding}" />
-					</DataTemplate>
-				</TabControl.ContentTemplate>
-			</controls:CustomTabControl>
-            <Border Grid.Row="1" Grid.ColumnSpan="2" IsVisible="{Binding !AtisStations.Count, DataType=vm:MainWindowViewModel, FallbackValue=True}" Margin="10" CornerRadius="4" BorderBrush="#646464" BorderThickness="1">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                    <TextBlock Text="CAN 当前没有配置通播席位" Foreground="#E6E8F0" FontSize="24" HorizontalAlignment="Center"/>
-                    <TextBlock Text="请打开“通播配置”创建席位，或从 CAN 配置文件导入。" Foreground="#8B90A4" FontSize="14" HorizontalAlignment="Center"/>
-                </StackPanel>
-			</Border>
-		</Grid>
-	</Border>
+        x:DataType="vm:MainWindowViewModel"
+        Width="960" Height="500" MinWidth="760" MinHeight="400"
+        SystemDecorations="None" WindowStartupLocation="CenterScreen"
+        CanResize="True" PointerPressed="OnWindowPointerPressed"
+        PointerMoved="OnWindowPointerMoved" PointerExited="OnWindowPointerExited"
+        Background="{DynamicResource Brush.Bg.App}" Title="CAN ATIS" Icon="/Assets/MainIcon.ico"
+        Topmost="{Binding IsTopMost, DataType=vm:TopMostViewModel, Source={x:Static vm:TopMostViewModel.Instance}}">
+    <Border BorderBrush="{DynamicResource Brush.Border.Control}" BorderThickness="1" ClipToBounds="True">
+        <Grid RowDefinitions="Auto,*">
+            <Border Classes="toolbar" PointerPressed="OnPointerPressed" DoubleTapped="OnDoubleTapped">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Button Theme="{StaticResource Dark}" Content="用户设置" Command="{Binding OpenSettingsDialogCommand}" />
+                        <Button Theme="{StaticResource Dark}" Content="通播配置" Command="{Binding OpenProfileConfigurationWindowCommand}" />
+                        <Border Width="1" Background="{DynamicResource Brush.Border.Control}" Margin="4,2" />
+                        <ToggleButton Theme="{StaticResource BlueToggle}" Content="置顶" ToolTip.Tip="窗口始终在最前"
+                                      Command="{Binding ToggleIsTopMost, DataType=vm:TopMostViewModel, Source={x:Static vm:TopMostViewModel.Instance}}"
+                                      IsChecked="{Binding IsTopMost, Mode=OneWay, DataType=vm:TopMostViewModel, Source={x:Static vm:TopMostViewModel.Instance}}" />
+                        <Button Theme="{StaticResource Dark}" Content="精简窗口" Command="{Binding InvokeMiniWindowCommand}" />
+                        <Button Theme="{StaticResource Dark}" Content="日志" Click="OnOpenLogs" ToolTip.Tip="打开按日保存的日志文件夹" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Classes="clock" Text="{Binding CurrentTime}" Margin="12,0" ToolTip.Tip="UTC 时间" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <Button Theme="{StaticResource Dark}" Content="—" Width="26" Padding="0" Click="OnMinimizeWindow" ToolTip.Tip="最小化" />
+                        <Button Theme="{StaticResource Dark}" Content="✕" Width="26" Padding="0" Command="{Binding EndClientSessionCommand}" ToolTip.Tip="退出" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <controls:CustomTabControl Name="AtisStations" Grid.Row="1"
+                                       Classes.top="{Binding StationListOnTop}"
+                                       IsVisible="{Binding AtisStations.Count}"
+                                       ItemsSource="{Binding AtisStations}" SelectedIndex="{Binding SelectedTabIndex}">
+                <controls:CustomTabControl.Styles>
+                    <Style Selector="controls|CustomTabControl.top /template/ ScrollViewer#StationNavigation">
+                        <Setter Property="DockPanel.Dock" Value="Top" />
+                        <Setter Property="Width" Value="NaN" />
+                        <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+                        <Setter Property="VerticalScrollBarVisibility" Value="Disabled" />
+                    </Style>
+                    <Style Selector="controls|CustomTabControl.top">
+                        <Setter Property="ItemsPanel">
+                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                        </Setter>
+                    </Style>
+                    <Style Selector="controls|CustomTabControl.top controls|CustomTabItem /template/ TextBlock#PART_AtisIdentifier">
+                        <Setter Property="Text" Value="{Binding Identifier, DataType=vm:AtisStationViewModel}" />
+                    </Style>
+                    <Style Selector="controls|CustomTabControl.top controls|CustomTabItem /template/ TextBlock#PART_AtisLetter">
+                        <Setter Property="IsVisible" Value="False" />
+                    </Style>
+                </controls:CustomTabControl.Styles>
+                <controls:CustomTabControl.ItemContainerTheme>
+                    <ControlTheme TargetType="controls:CustomTabItem" BasedOn="{StaticResource {x:Type controls:CustomTabItem}}" />
+                </controls:CustomTabControl.ItemContainerTheme>
+                <TabControl.ContentTemplate>
+                    <DataTemplate DataType="vm:AtisStationViewModel"><components:AtisStationView ViewModel="{Binding}" /></DataTemplate>
+                </TabControl.ContentTemplate>
+            </controls:CustomTabControl>
+            <StackPanel Grid.Row="1" IsVisible="{Binding !AtisStations.Count}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                <TextBlock Text="当前配置文件没有通播席位" Foreground="{DynamicResource Brush.Text.Muted}" HorizontalAlignment="Center" />
+                <Button Theme="{StaticResource Dark}" Classes="primary" Content="打开通播配置" HorizontalAlignment="Center" Command="{Binding OpenProfileConfigurationWindowCommand}" />
+            </StackPanel>
+            <Border x:Name="Overlay" Grid.RowSpan="2" ZIndex="100" Background="{DynamicResource Brush.Bg.Overlay}" IsVisible="{Binding ShowOverlay}" />
+        </Grid>
+    </Border>
 </Window>

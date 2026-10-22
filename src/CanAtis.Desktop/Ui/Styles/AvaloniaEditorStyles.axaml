@@ -4,8 +4,9 @@
         xmlns:cc="clr-namespace:AvaloniaEdit.CodeCompletion;assembly=AvaloniaEdit">
     
     <Style Selector="ae|TextEditor">
-        <Setter Property="Background" Value="#1e1e1e"/>
-        <Setter Property="BorderBrush" Value="#646464"/>
+        <Setter Property="Background" Value="{DynamicResource Brush.Bg.Control}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Control}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Style Selector="^:focus-within">
             <Setter Property="Background" Value="#141414"/>

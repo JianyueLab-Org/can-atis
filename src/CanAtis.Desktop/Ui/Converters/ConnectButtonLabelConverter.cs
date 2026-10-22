@@ -23,14 +23,14 @@ public class ConnectButtonLabelConverter : IValueConverter
         {
             return flag switch
             {
-                NetworkConnectionStatus.Connected => "DISCONNECT",
-                NetworkConnectionStatus.Connecting => "CONNECTING",
-                NetworkConnectionStatus.Disconnected => "CONNECT",
-                _ => "CONNECT",
+                NetworkConnectionStatus.Connected => "断开连接",
+                NetworkConnectionStatus.Connecting => "连接中",
+                NetworkConnectionStatus.Disconnected => "连接",
+                _ => "连接",
             };
         }
 
-        return "CONNECT";
+        return "连接";
     }
 
     /// <inheritdoc/>

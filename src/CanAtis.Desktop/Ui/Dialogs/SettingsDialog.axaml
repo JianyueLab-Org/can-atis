@@ -8,7 +8,7 @@
 		mc:Ignorable="d"
 		x:Class="CanAtis.Ui.Dialogs.SettingsDialog"
 		x:Name="Window"
-		Width="300"
+		Width="380"
 		ShowInTaskbar="False"
 		CanResize="False"
 		SystemDecorations="None"
@@ -17,12 +17,13 @@
 		Background="Transparent"
 		TransparencyLevelHint="Transparent"
 		Title="User Settings">
-	<Border BorderBrush="#646464" BorderThickness="1" Background="#323232" CornerRadius="5">
+	<Border BorderBrush="{DynamicResource Brush.Border.Control}" BorderThickness="1" Background="{DynamicResource Brush.Bg.Panel}" CornerRadius="4">
 		<StackPanel>
             <Border BorderBrush="#3A4560" BorderThickness="0,0,0,1" Background="Transparent" PointerPressed="OnPointerPressed">
-                <TextBlock Text="CAN 账号设置" Padding="8" VerticalAlignment="Center" Foreground="#F0F0F0" FontWeight="Medium" />
+                <TextBlock Text="用户设置" Padding="12" VerticalAlignment="Center" FontWeight="Medium" />
 			</Border>
 			<StackPanel Spacing="5" Margin="15">
+                <TextBlock Classes="section" Text="CAN 账号" Margin="0,0,0,6" />
 				<StackPanel>
                     <TextBlock Text="姓名:"/>
 					<TextBox Name="RealName" Text="{Binding Name, DataType=vm:SettingsDialogViewModel}" Theme="{StaticResource DarkTextBox}"/>
@@ -39,19 +40,18 @@
                     <TextBlock Text="CAN 网络密码:"/>
 					<TextBox Name="VatsimPassword" PasswordChar="•" Text="{Binding Password, DataType=vm:SettingsDialogViewModel}" Theme="{StaticResource DarkTextBox}"/>
 				</StackPanel>
+                <TextBlock Text="使用 CAN 账号登录，飞行员和其他成员均可使用。" TextWrapping="Wrap" Foreground="{DynamicResource Brush.Text.Muted}" Margin="0,6" />
 				<StackPanel>
-                    <TextBlock Text="网络等级:"/>
-					<ComboBox Classes="Dark" HorizontalAlignment="Stretch" ItemsSource="{Binding NetworkRatings, DataType=vm:SettingsDialogViewModel}" DisplayMemberBinding="{Binding Display, DataType=common:ComboBoxItemMeta}" SelectedValueBinding="{Binding Value, DataType=common:ComboBoxItemMeta}" SelectedValue="{Binding SelectedNetworkRating, DataType=vm:SettingsDialogViewModel}"/>
-				</StackPanel>
-				<StackPanel>
-					<CheckBox Theme="{StaticResource CheckBox}" Content="Mute own ATIS update sound" IsChecked="{Binding MuteOwnAtisUpdateSound, DataType=vm:SettingsDialogViewModel}" />
-                    <CheckBox Theme="{StaticResource CheckBox}" Content="Mute shared ATIS update sound" IsChecked="{Binding MuteSharedAtisUpdateSound, DataType=vm:SettingsDialogViewModel}" />
-					<CheckBox Theme="{StaticResource CheckBox}" Content="Automatically fetch ATIS letter" ToolTip.Tip="Fetch the real-world ATIS letter for supported stations automatically after connecting to the network." IsChecked="{Binding AutoFetchAtisLetter, DataType=vm:SettingsDialogViewModel}" IsEnabled="{Binding !AutoFetchDatis, DataType=vm:SettingsDialogViewModel}" />
-					<CheckBox Theme="{StaticResource CheckBox}" Content="Automatically fetch D-ATIS" ToolTip.Tip="Fetch real-world D-ATIS data and populate airport conditions and NOTAMs for stations with a D-ATIS preset." IsChecked="{Binding AutoFetchDatis, DataType=vm:SettingsDialogViewModel}" />
+                    <TextBlock Classes="section" Text="常规" Margin="0,12,0,6" />
+                    <CheckBox Theme="{StaticResource CheckBox}" Content="静音自己的通播更新提示" IsChecked="{Binding MuteOwnAtisUpdateSound, DataType=vm:SettingsDialogViewModel}" />
+                    <CheckBox Theme="{StaticResource CheckBox}" Content="静音共享通播更新提示" IsChecked="{Binding MuteSharedAtisUpdateSound, DataType=vm:SettingsDialogViewModel}" />
+                    <CheckBox Theme="{StaticResource CheckBox}" Content="自动获取通播字母" IsChecked="{Binding AutoFetchAtisLetter, DataType=vm:SettingsDialogViewModel}" IsEnabled="{Binding !AutoFetchDatis, DataType=vm:SettingsDialogViewModel}" />
+                    <CheckBox Theme="{StaticResource CheckBox}" Content="自动获取 D-ATIS" IsChecked="{Binding AutoFetchDatis, DataType=vm:SettingsDialogViewModel}" />
+                    <CheckBox Theme="{StaticResource CheckBox}" Content="席位列表放在顶部（仅显示 ICAO）" IsChecked="{Binding StationListOnTop, DataType=vm:SettingsDialogViewModel}" />
 				</StackPanel>
 				<Grid ColumnDefinitions="1*,5,1*">
-					<Button Theme="{StaticResource Dark}" Grid.Column="0" HorizontalAlignment="Stretch" Content="Save" Command="{Binding SaveSettingsCommand, DataType=vm:SettingsDialogViewModel}" CommandParameter="{Binding ElementName=Window}" IsDefault="True" />
-					<Button Theme="{StaticResource Dark}" Grid.Column="2" HorizontalAlignment="Stretch" Content="Cancel" Click="CancelButtonClicked"/>
+					<Button Theme="{StaticResource Dark}" Classes="primary" Grid.Column="0" HorizontalAlignment="Stretch" Content="保存" Command="{Binding SaveSettingsCommand, DataType=vm:SettingsDialogViewModel}" CommandParameter="{Binding ElementName=Window}" IsDefault="True" />
+					<Button Theme="{StaticResource Dark}" Grid.Column="2" HorizontalAlignment="Stretch" Content="取消" Click="CancelButtonClicked"/>
 				</Grid>
 			</StackPanel>
 		</StackPanel>

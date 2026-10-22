@@ -58,6 +58,16 @@ public class NetworkConnection : INetworkConnection, IDisposable
     private string? _previousMetar;
     private bool _isCallsignInUse;
     private DecodedMetar? _decodedMetar;
+    private bool _loginConfirmed;
+    private string? _pendingPing;
+    private long _pingStarted;
+    private long _lastPong;
+
+    /// <inheritdoc />
+    public double? LatencyMs => IsConnected && _lastPong != 0 &&
+        System.Diagnostics.Stopwatch.GetElapsedTime(_lastPong).TotalSeconds < 45 ? _latencyMs : null;
+
+    private double? _latencyMs;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NetworkConnection"/> class.
@@ -178,6 +188,8 @@ public class NetworkConnection : INetworkConnection, IDisposable
     public void Dispose()
     {
         _disposables.Dispose();
+        Disconnect();
+        _fsdPositionUpdateTimer.Dispose();
         GC.SuppressFinalize(this);
     }
 
@@ -185,6 +197,11 @@ public class NetworkConnection : INetworkConnection, IDisposable
     public async Task Connect(string? serverAddress = null)
     {
         ArgumentNullException.ThrowIfNull(_atisStation);
+        _loginConfirmed = false;
+        _latencyMs = null;
+        _lastPong = 0;
+        Log.Information("FSD connecting: {Callsign} {Host}:{Port}", Callsign,
+            serverAddress ?? _appConfigurationProvider.FsdHost, _appConfigurationProvider.FsdPort);
 
         _fsdSession.Connect(serverAddress ?? _appConfigurationProvider.FsdHost,
             _appConfigurationProvider.FsdPort);
@@ -214,6 +231,8 @@ public class NetworkConnection : INetworkConnection, IDisposable
     /// <inheritdoc />
     public void Disconnect()
     {
+        _loginConfirmed = false;
+        _latencyMs = null;
         _fsdSession.SendPdu(new PDUDeleteATC(Callsign, _appConfig.UserId.Trim()));
         _fsdSession.Disconnect();
         _fsdPositionUpdateTimer.Stop();
@@ -263,7 +282,9 @@ public class NetworkConnection : INetworkConnection, IDisposable
 
     private void OnRawDataSent(object? sender, RawDataEventArgs e)
     {
-        Log.Debug(">> " + e.Data.Trim('\n').Trim('\r'));
+        // Login PDUs contain the network password; never write them to disk.
+        if (!e.Data.StartsWith("#AA", StringComparison.Ordinal) && !e.Data.StartsWith("#AP", StringComparison.Ordinal))
+            Log.Debug(">> " + e.Data.Trim('\n').Trim('\r'));
     }
 
     private void OnRawDataReceived(object? sender, RawDataEventArgs e)
@@ -278,6 +299,10 @@ public class NetworkConnection : INetworkConnection, IDisposable
 
     private void OnNetworkDisconnected(object? sender, NetworkEventArgs e)
     {
+        _loginConfirmed = false;
+        _latencyMs = null;
+        _fsdPositionUpdateTimer.Stop();
+        Log.Information("FSD disconnected: {Callsign}", Callsign);
         if (_atisStation?.Identifier != null)
             _metarRepository.RemoveMetar(_atisStation.Identifier);
 
@@ -335,8 +360,7 @@ public class NetworkConnection : INetworkConnection, IDisposable
         // If the server replies with a PONG, we can safely assume the connection is active.
         // Without this check, vATIS might assume the connection is successful and start
         // the ATIS build process, even if the connection was lost (e.g., due to a duplicate callsign).
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        _fsdSession.SendPdu(new PDUPing(Callsign, PDUBase.SERVER_CALLSIGN, timestamp));
+        SendPing();
     }
 
     private void OnClientQueryReceived(object? sender, DataReceivedEventArgs<PDUClientQuery> e)
@@ -466,6 +490,16 @@ public class NetworkConnection : INetworkConnection, IDisposable
 
     private void OnPongReceived(object? sender, DataReceivedEventArgs<PDUPong> e)
     {
+        if (e.Pdu.From != PDUBase.SERVER_CALLSIGN || e.Pdu.TimeStamp != _pendingPing)
+            return;
+        _latencyMs = System.Diagnostics.Stopwatch.GetElapsedTime(_pingStarted).TotalMilliseconds;
+        _lastPong = System.Diagnostics.Stopwatch.GetTimestamp();
+        _pendingPing = null;
+        PongReceived(this, EventArgs.Empty);
+        if (_loginConfirmed)
+            return;
+        _loginConfirmed = true;
+        Log.Information("FSD connected: {Callsign}, RTT {Latency:F0} ms", Callsign, _latencyMs);
         // Successfully received a PONG response from the FSD server.
         // We can now safely assume the connection to the FSD server is active.
         // Notify the client that the connection is established, allowing it to proceed with
@@ -509,7 +543,17 @@ public class NetworkConnection : INetworkConnection, IDisposable
 
     private void OnFsdPositionUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
     {
+        if (!_fsdSession.Connected)
+            return;
         SendAtcPositionPacket();
+        SendPing();
+    }
+
+    private void SendPing()
+    {
+        _pendingPing = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
+        _pingStarted = System.Diagnostics.Stopwatch.GetTimestamp();
+        _fsdSession.SendPdu(new PDUPing(Callsign, PDUBase.SERVER_CALLSIGN, _pendingPing));
     }
 
     private void SendClientIdentification()
@@ -524,7 +568,7 @@ public class NetworkConnection : INetworkConnection, IDisposable
         _fsdSession.SendPdu(new PDUAddATC(Callsign, _appConfig.Name, _appConfig.UserId.Trim(),
             _appConfig.PasswordDecrypted,
             // can-fsd uses protocol revision 100 for the classic CAN login.
-            _appConfig.NetworkRating, ProtocolRevision.VatsimAuth));
+            NetworkRating.Obs, ProtocolRevision.VatsimAuth));
 
         _fsdSession.SendPdu(new PDUClientQuery(Callsign, PDUBase.SERVER_CALLSIGN, ClientQueryType.PublicIp));
     }
@@ -534,8 +578,8 @@ public class NetworkConnection : INetworkConnection, IDisposable
         if (_airportData == null)
             throw new ApplicationException("Airport data is null");
 
-        _fsdSession.SendPdu(new PDUATCPosition(Callsign, _fsdFrequency, NetworkFacility.Twr, 50,
-            _appConfig.NetworkRating, _airportData.Latitude, _airportData.Longitude));
+        _fsdSession.SendPdu(new PDUATCPosition(Callsign, _fsdFrequency, NetworkFacility.Atis, 50,
+            NetworkRating.Obs, _airportData.Latitude, _airportData.Longitude));
     }
 
     private List<string> FormatAtisText(string atisText)
