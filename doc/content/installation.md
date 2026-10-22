@@ -19,7 +19,7 @@
 
 完整发布包应由维护者配置好 `NativeAudio.dll`、Python、Mumble 依赖、`mumblecompat.py`、`can_mumble_worker.py` 和 Opus 动态库。缺少组件时，窗口可能仍能打开，但不能据此判断录音、试听或网络播音可用。
 
-源码运行和依赖安装见[本地开发](client/local-development.md)。原版同款在线 TTS 的公共 CAN 服务目前尚未部署，安装客户端不会自动获得原版语音模型。
+源码运行和依赖安装见[本地开发](client/local-development.md)。Windows 客户端的 TTS 使用系统已安装的 SAPI 语音，不依赖在线 TTS 服务；如果需要其他音色，请先在 Windows 的语音设置中安装对应语音包。
 
 ## 首次运行
 

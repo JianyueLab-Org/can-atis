@@ -5,7 +5,7 @@
 - **Windows**：推荐 Windows 10 / 11，64 位（x64）。使用与系统架构匹配的 CAN 发布包。
 - **网络**：连接 CAN FSD、Mumble 和数据服务。Mumble 的控制连接需要 TCP，UDP 语音还取决于客户端实现和网络条件。
 - **音频设备**：试听需要播放设备；人工录音需要麦克风和相应的系统权限。
-- **语音组件**：当前源码通过 Python worker 发送 Mumble 音频，发布包需提供 Python 环境、对应依赖和 Opus 动态库。
+- **语音组件**：Windows 版本的 TTS 使用系统内置 Windows SAPI，不需要联网的 TTS 服务或额外语音模型；Mumble 音频发送仍需 Python worker、对应依赖和 Opus 动态库。
 
 ## 从源码构建
 

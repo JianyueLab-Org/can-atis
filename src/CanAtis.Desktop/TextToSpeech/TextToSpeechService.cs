@@ -1,4 +1,4 @@
-﻿// <copyright file="TextToSpeechService.cs" company="Justin Shannon">
+// <copyright file="TextToSpeechService.cs" company="Justin Shannon">
 // Copyright (c) Justin Shannon. All rights reserved.
 // Licensed under the GPLv3 license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -6,56 +6,76 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text.Json;
-using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
-using Serilog;
-using CanAtis.Config;
-using CanAtis.Io;
-using CanAtis.Networking;
 using CanAtis.Profiles.Models;
+using CanAtis.Voice.WavPack;
+using Serilog;
 
 namespace CanAtis.TextToSpeech;
 
-/// <inheritdoc />
+/// <summary>
+/// Synthesizes speech offline with Windows SAPI, returning 48 kHz mono 16-bit PCM.
+/// </summary>
 public class TextToSpeechService : ITextToSpeechService
 {
-    private readonly IDownloader _downloader;
-    private readonly IAuthTokenManager _authTokenManager;
-    private readonly IAppConfigurationProvider _appConfigurationProvider;
+    /// <inheritdoc />
+    public List<VoiceMetaData> VoiceList { get; private set; } = [];
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TextToSpeechService"/> class.
-    /// </summary>
-    /// <param name="downloader">The downloader instance used for downloading required resources.</param>
-    /// <param name="authTokenManager">The authentication token manager for managing authentication tokens.</param>
-    /// <param name="appConfigurationProvider">The application configuration provider for accessing configuration settings.</param>
-    public TextToSpeechService(IDownloader downloader, IAuthTokenManager authTokenManager,
-        IAppConfigurationProvider appConfigurationProvider)
-    {
-        _downloader = downloader;
-        _authTokenManager = authTokenManager;
-        _appConfigurationProvider = appConfigurationProvider;
-        VoiceList = [];
-    }
-
-    /// <inheritdoc/>
-    public IReadOnlyDictionary<string, string> BuiltInContractions { get; private set; } =
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, string> BuiltInContractions { get; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-    /// <inheritdoc/>
-    public List<VoiceMetaData> VoiceList { get; private set; }
 
     /// <inheritdoc />
     public async Task Initialize()
     {
-        if (string.IsNullOrWhiteSpace(_appConfigurationProvider.VoiceListUrl))
+        VoiceList = [];
+        if (!OperatingSystem.IsWindows())
             return;
 
-        // The two requests are independent, so issue them concurrently.
-        await Task.WhenAll(LoadVoiceList(), LoadBuiltInContractions());
+        try
+        {
+            VoiceList = await RunSta(() =>
+            {
+                dynamic voice = CreateComObject("SAPI.SpVoice");
+                try
+                {
+                    dynamic tokens = voice.GetVoices();
+                    try
+                    {
+                        List<VoiceMetaData> voices = [new() { Name = "Default", Id = "default" }];
+                        for (var i = 0; i < (int)tokens.Count; i++)
+                        {
+                            dynamic token = tokens.Item(i);
+                            try
+                            {
+                                voices.Add(new VoiceMetaData { Name = (string)token.GetDescription(), Id = (string)token.Id });
+                            }
+                            finally
+                            {
+                                ReleaseComObject(token);
+                            }
+                        }
+
+                        return voices;
+                    }
+                    finally
+                    {
+                        ReleaseComObject(tokens);
+                    }
+                }
+                finally
+                {
+                    ReleaseComObject(voice);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error enumerating Windows speech voices");
+        }
     }
 
     /// <inheritdoc />
@@ -63,8 +83,7 @@ public class TextToSpeechService : ITextToSpeechService
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-
-        if (string.IsNullOrWhiteSpace(_appConfigurationProvider.TextToSpeechUrl))
+        if (!OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(text))
             return null;
 
         var voiceName = station.AtisVoice.Voice;
@@ -74,77 +93,135 @@ public class TextToSpeechService : ITextToSpeechService
             voiceName = voices[index < 0 ? index + voices.Length : index];
         }
 
-        var voiceId = VoiceList.FirstOrDefault(v => v.Name == voiceName)?.Id ?? "default";
-
-        var authToken = await _authTokenManager.GetAuthToken(cancellationToken);
-
         try
         {
-            var dto = new TextToSpeechRequestDto
-            {
-                Text = text,
-                Voice = voiceId,
-                SpeechRate = station.AtisVoice.SpeechRate,
-                Jwt = authToken
-            };
-
-            var jsonDto = JsonSerializer.Serialize(dto, SourceGenerationContext.NewDefault.TextToSpeechRequestDto);
-            var response = await _downloader.PostJsonDownloadAsync(_appConfigurationProvider.TextToSpeechUrl, jsonDto,
-                cancellationToken);
-            {
-                using var stream = new MemoryStream();
-                await response.CopyToAsync(stream, cancellationToken);
-                return stream.ToArray();
-            }
+            var rate = station.AtisVoice.SpeechRate;
+            return await RunSta(() => Synthesize(text, voiceName, rate, cancellationToken));
         }
-        catch (TaskCanceledException)
+        catch (OperationCanceledException)
         {
-            // Ignored
+            throw;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error requesting audio for voice {Voice}", voiceId);
+            Log.Error(ex, "Error synthesizing Windows speech with voice {Voice}", voiceName);
+            return null;
         }
-
-        return null;
     }
 
-    private async Task LoadVoiceList()
+    [SupportedOSPlatform("windows")]
+    private static byte[] Synthesize(string text, string? voiceName, int rate, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        dynamic voice = CreateComObject("SAPI.SpVoice");
         try
         {
-            var response = await _downloader.DownloadStringAsync(_appConfigurationProvider.VoiceListUrl);
+            SelectVoice(voice, voiceName);
+            // The existing UI uses 180 as its baseline; SAPI uses -10 through +10.
+            voice.Rate = Math.Clamp((rate - 180) / 10, -10, 10);
+            var outputPath = Path.Combine(Path.GetTempPath(), $"can-atis-tts-{Guid.NewGuid():N}.wav");
+            dynamic stream = CreateComObject("SAPI.SpFileStream");
+            try
             {
-                var voices = JsonSerializer.Deserialize(response, SourceGenerationContext.NewDefault.ListVoiceMetaData);
-                if (voices != null)
+                stream.Format.Type = 33; // SAFT48kHz16BitMono
+                stream.Open(outputPath, 3, false); // SSFMCreateForWrite
+
+                voice.AudioOutputStream = stream;
+                voice.Speak(text, 17); // SVSFlagsAsync | SVSFIsNotXML (treat user text as plain text)
+                while (!(bool)voice.WaitUntilDone(50))
                 {
-                    VoiceList = voices;
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        voice.Speak(string.Empty, 3); // Async | PurgeBeforeSpeak
+                        cancellationToken.ThrowIfCancellationRequested();
+                    }
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                var samples = WavDecoder.Decode(File.ReadAllBytes(outputPath));
+                var pcm = new byte[samples.Length * sizeof(short)];
+                Buffer.BlockCopy(samples, 0, pcm, 0, pcm.Length);
+                return pcm;
+            }
+            finally
+            {
+                ReleaseComObject(stream);
+                try { File.Delete(outputPath); } catch (IOException) { }
+            }
+        }
+        finally
+        {
+            ReleaseComObject(voice);
+        }
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static void SelectVoice(dynamic voice, string? voiceName)
+    {
+        if (string.IsNullOrWhiteSpace(voiceName) || voiceName == "Default")
+            return;
+
+        dynamic tokens = voice.GetVoices();
+        try
+        {
+            for (var i = 0; i < (int)tokens.Count; i++)
+            {
+                dynamic token = tokens.Item(i);
+                try
+                {
+                    if ((string)token.GetDescription() == voiceName)
+                    {
+                        voice.Voice = token;
+                        return;
+                    }
+                }
+                finally
+                {
+                    ReleaseComObject(token);
                 }
             }
+
+            Log.Warning("Windows voice {Voice} is not installed; using the system default", voiceName);
         }
-        catch (Exception ex)
+        finally
         {
-            Log.Error(ex, "Error downloading voice list");
+            ReleaseComObject(tokens);
         }
     }
 
-    private async Task LoadBuiltInContractions()
+    [SupportedOSPlatform("windows")]
+    private static Task<T> RunSta<T>(Func<T> action)
     {
-        try
+        var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var thread = new Thread(() =>
         {
-            // The contractions endpoint lives alongside the voice list endpoint (e.g. /speech/voices).
-            var contractionsUrl = Regex.Replace(_appConfigurationProvider.VoiceListUrl, @"voices/?$", "contractions");
-            var response = await _downloader.DownloadStringAsync(contractionsUrl);
-            var contractions = JsonSerializer.Deserialize(response,
-                SourceGenerationContext.NewDefault.DictionaryStringString);
-            if (contractions != null)
+            try
             {
-                BuiltInContractions = new Dictionary<string, string>(contractions, StringComparer.OrdinalIgnoreCase);
+                completion.SetResult(action());
             }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error downloading built-in contractions");
-        }
+            catch (OperationCanceledException ex)
+            {
+                completion.SetCanceled(ex.CancellationToken);
+            }
+            catch (Exception ex)
+            {
+                completion.SetException(ex);
+            }
+        }) { IsBackground = true, Name = "Windows TTS" };
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        return completion.Task;
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static object CreateComObject(string progId) =>
+        Activator.CreateInstance(Type.GetTypeFromProgID(progId, true)!)
+        ?? throw new InvalidOperationException($"Could not create {progId}.");
+
+    [SupportedOSPlatform("windows")]
+    private static void ReleaseComObject(object value)
+    {
+        if (Marshal.IsComObject(value))
+            Marshal.ReleaseComObject(value);
     }
 }

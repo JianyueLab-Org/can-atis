@@ -448,9 +448,8 @@ public class App : Application
 
     private async Task UpdateAvailableVoicesAsync()
     {
-        // Text-to-speech is not connected for the CAN client. Keep this startup step
-        // as a no-op so the rest of the startup pipeline remains unchanged.
-        await Task.CompletedTask;
+        if (_serviceProvider != null)
+            await _serviceProvider.GetService<ITextToSpeechService>().Initialize();
     }
 
     private async Task UpdateNavDataAsync()
