@@ -1,0 +1,868 @@
+﻿// <copyright file="AtisBuilder.cs" company="Justin Shannon">
+// Copyright (c) Justin Shannon. All rights reserved.
+// Licensed under the GPLv3 license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
+using System.Net.Http;
+using System.Reflection;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Web;
+using Serilog;
+using CanAtis.Atis.Extensions;
+using CanAtis.Atis.Nodes;
+using CanAtis.Io;
+using CanAtis.NavData;
+using CanAtis.Profiles.Models;
+using CanAtis.TextToSpeech;
+using CanAtis.Utils;
+using CanAtis.Voice.WavPack;
+using CanAtis.Weather;
+using CanAtis.Weather.Decoder.Entity;
+using Visibility = CanAtis.Weather.Decoder.Entity.Visibility;
+
+namespace CanAtis.Atis;
+
+/// <summary>
+/// The ATIS builder that builds ATIS messages in text and voice formats.
+/// </summary>
+public class AtisBuilder : IAtisBuilder
+{
+    private readonly IDownloader? _downloader;
+    private readonly IMetarRepository? _metarRepository;
+    private readonly INavDataRepository? _navDataRepository;
+    private readonly ITextToSpeechService? _textToSpeechService;
+    private readonly IWavPackService _wavPackService;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AtisBuilder"/> class.
+    /// </summary>
+    /// <param name="downloader">The downloader.</param>
+    /// <param name="navDataRepository">The navigation data repository.</param>
+    /// <param name="textToSpeechService">The text to speech service.</param>
+    /// <param name="metarRepository">The METAR repository.</param>
+    /// <param name="wavPackService">The WAV voice pack service.</param>
+    public AtisBuilder(IDownloader downloader, INavDataRepository navDataRepository,
+        ITextToSpeechService textToSpeechService, IMetarRepository metarRepository,
+        IWavPackService wavPackService)
+    {
+        _wavPackService = wavPackService;
+        _downloader = downloader;
+        _metarRepository = metarRepository;
+        _navDataRepository = navDataRepository;
+        _textToSpeechService = textToSpeechService;
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyDictionary<string, string> BuiltInContractions =>
+        _textToSpeechService?.BuiltInContractions ?? new Dictionary<string, string>();
+
+    /// <inheritdoc/>
+    public async Task<AtisBuilderVoiceAtisResponse> BuildVoiceAtis(AtisStation station, AtisPreset preset,
+        char currentAtisLetter, DecodedMetar decodedMetar, CancellationToken cancellationToken,
+        bool sandboxRequest = false)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        ArgumentNullException.ThrowIfNull(station);
+        ArgumentNullException.ThrowIfNull(preset);
+        ArgumentNullException.ThrowIfNull(decodedMetar);
+
+        // If the preset is set to use an external ATIS generator,
+        // generate the ATIS using the external generator.
+        if (preset.ExternalGenerator is { Enabled: true })
+        {
+            return await GetExternalVoiceAtis(station, preset, currentAtisLetter.ToString(),
+                             decodedMetar.RawMetar, cancellationToken) ??
+                         throw new AtisBuilderException("Failed to generate voice ATIS from external source.");
+        }
+
+        var airportData = _navDataRepository?.GetAirport(station.Identifier) ??
+                          throw new AtisBuilderException($"{station.Identifier} not found in airport database.");
+
+        var variables = await ParseNodesFromMetar(station, preset, decodedMetar, airportData, currentAtisLetter);
+
+        var (spokenText, audioBytes) =
+            await CreateVoiceAtis(station, preset, currentAtisLetter, variables, decodedMetar, cancellationToken);
+
+        return new AtisBuilderVoiceAtisResponse(spokenText, audioBytes);
+    }
+
+    /// <inheritdoc/>
+    public string GetSpokenText(string token, AtisStation station)
+    {
+        // Station contractions are expanded first, as when building the voice ATIS.
+        var expanded = ReplaceContractionVariable(token.ToUpperInvariant(), station, voiceVariable: true);
+        var spoken = FormatForTextToSpeech(expanded, station).Trim();
+
+        // The ATIS Hub strips any characters it can't speak (e.g. the '+' prefix on airport identifiers).
+        spoken = Regex.Replace(spoken, @"[^A-Za-z0-9 .,\-'#]", string.Empty);
+
+        // The ATIS Hub expands its built-in contractions (e.g. TWY -> TAXIWAY) when synthesizing the audio.
+        var contractions = BuiltInContractions;
+        if (contractions.Count == 0)
+            return spoken;
+
+        var pattern = @"\b(" + string.Join("|", contractions.Keys.Select(Regex.Escape)) + @")\b";
+        return Regex.Replace(spoken, pattern,
+            m => contractions.TryGetValue(m.Value, out var expansion) ? expansion : m.Value,
+            RegexOptions.IgnoreCase);
+    }
+
+    /// <inheritdoc/>
+    public async Task<string?> BuildTextAtis(AtisStation station, AtisPreset preset, char currentAtisLetter,
+        DecodedMetar decodedMetar, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        ArgumentNullException.ThrowIfNull(station);
+        ArgumentNullException.ThrowIfNull(preset);
+        ArgumentNullException.ThrowIfNull(decodedMetar);
+
+        // If the preset is set to use an external ATIS generator,
+        // generate the ATIS using the external generator.
+        if (preset.ExternalGenerator is { Enabled: true })
+        {
+            return await GetExternalTextAtis(station, preset, currentAtisLetter.ToString(), decodedMetar.RawMetar) ??
+                   throw new AtisBuilderException("Failed to generate text ATIS from external source.");
+        }
+
+        var airportData = _navDataRepository?.GetAirport(station.Identifier) ??
+                          throw new AtisBuilderException($"{station.Identifier} not found in airport database.");
+
+        var variables = await ParseNodesFromMetar(station, preset, decodedMetar, airportData, currentAtisLetter);
+
+        return await CreateTextAtis(station, preset, currentAtisLetter, variables, decodedMetar);
+    }
+
+    /// <inheritdoc />
+    public async Task<string?> GetExternalTextAtis(AtisStation station, AtisPreset preset, string currentAtisLetter,
+        string? rawMetar)
+    {
+        return await GetExternalAtis(preset.ExternalGenerator?.TextUrl, currentAtisLetter, rawMetar,
+            preset.ExternalGenerator);
+    }
+
+    /// <inheritdoc />
+    public async Task<AtisBuilderVoiceAtisResponse?> GetExternalVoiceAtis(AtisStation station, AtisPreset preset,
+        string currentAtisLetter, string? rawMetar, CancellationToken cancellationToken)
+    {
+        var result = await GetExternalAtis(preset.ExternalGenerator?.VoiceUrl, currentAtisLetter, rawMetar,
+            preset.ExternalGenerator);
+
+        if (result == null)
+        {
+            return null;
+        }
+
+        // Format for text-to-speech (replace text parsing characters, etc).
+        result = FormatForTextToSpeech(result, station);
+
+        if (station.AtisVoice.UseWavPack)
+        {
+            var (spokenText, pcm) = BuildWavPackAudio(result, station);
+            return new AtisBuilderVoiceAtisResponse(spokenText, pcm);
+        }
+
+        if (_textToSpeechService == null)
+            return null;
+
+        var audioBytes = await _textToSpeechService.RequestAudio(result, station, currentAtisLetter[0], cancellationToken);
+        return audioBytes != null ? new AtisBuilderVoiceAtisResponse(result, audioBytes) : null;
+    }
+
+    /// <inheritdoc/>
+    public async Task UpdateIds(AtisStation station, AtisPreset preset, char currentAtisLetter,
+        CancellationToken cancellationToken)
+    {
+        var request = new IdsUpdateRequest
+        {
+            Facility = station.Identifier,
+            Preset = preset.Name ?? "",
+            AtisLetter = currentAtisLetter.ToString(),
+            AirportConditions = preset.AirportConditions?.StripNewLineChars() ?? "",
+            Notams = preset.Notams?.StripNewLineChars() ?? "",
+            TextAtis = station.TextAtis ?? "",
+            Timestamp = DateTime.UtcNow,
+            Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "",
+            AtisType = station.AtisType.ToString().ToLowerInvariant()
+        };
+
+        await PostIdsUpdate(station, request, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task DisconnectIds(AtisStation station, CancellationToken cancellationToken)
+    {
+        var request = new IdsUpdateRequest
+        {
+            Facility = station.Identifier,
+            Preset = "",
+            AtisLetter = "",
+            AirportConditions = "",
+            Notams = "",
+            TextAtis = "",
+            Timestamp = DateTime.UtcNow,
+            Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "",
+            AtisType = station.AtisType.ToString().ToLowerInvariant()
+        };
+
+        await PostIdsUpdate(station, request, cancellationToken);
+    }
+
+    private static string ReplaceContractionVariable(string text, AtisStation station, bool voiceVariable = true)
+    {
+        return Regex.Replace(text, @"@?(\+?[\w]+(?:_[\w]+)*)", match =>
+        {
+            var key = match.Groups[1].Value; // Get the matched variable
+            var variable = station.Contractions.Find(v => v.VariableName == key); // Find matching variable
+
+            if (variable != null)
+            {
+                // Replace with the voice or text variable value if found, otherwise leave as is
+                return (voiceVariable ? variable.Voice : variable.Text) ?? match.Value;
+            }
+
+            // Return the match as is if no variable is found
+            return match.Value;
+        });
+    }
+
+    /// <summary>
+    /// Replaces <c>[QFE|elevation]</c> variables with the QFE calculated for the given elevation in feet, allowing
+    /// a preset to report the threshold QFE for the runways in use.
+    /// </summary>
+    private static string ReplaceQfeVariables(string template, DecodedMetar metar, bool voiceVariable)
+    {
+        var qnh = AltimeterSettingNode.GetQnhHpa(metar.Pressure?.Value);
+        return Regex.Replace(template, @"\[QFE\|(-?\d+)\]", match =>
+        {
+            if (qnh == null || !int.TryParse(match.Groups[1].Value, out var elevation))
+                return "";
+
+            var qfe = AltimeterSettingNode.CalculateQfe(qnh.Value, elevation);
+            return voiceVariable ? qfe.ToSerialFormat() : qfe.ToString(CultureInfo.InvariantCulture);
+        }, RegexOptions.IgnoreCase);
+    }
+
+    private static string RemoveTextParsingCharacters(string text)
+    {
+        // Remove '+' prefix from airport and navaid identifiers (3-4 uppercase letters/numbers)
+        text = Regex.Replace(text, @"\+([A-Z0-9]{3,4})", "$1");
+
+        // Replace multiple spaces/tabs with a single space (preserving line breaks)
+        text = Regex.Replace(text, @"[^\S\r\n]+", " ");
+
+        // Remove '*' prefix before numeric values (e.g., *123 → 123)
+        text = Regex.Replace(text, @"(?<=\*)(-?[\,0-9]+)", "$1");
+
+        // Remove '#' prefix before numeric values (e.g., #456 → 456)
+        text = Regex.Replace(text, @"(?<=\#)(-?[\,0-9]+)", "$1");
+
+        // Remove curly braces around numeric values (e.g., {789} → 789)
+        text = Regex.Replace(text, @"\{(-?[\,0-9]+)\}", "$1");
+
+        // Remove '+' prefix before 3-letter uppercase identifiers (e.g., +ABC → ABC)
+        text = Regex.Replace(text, @"(?<=\+)([A-Z]{3})", "$1");
+
+        // Remove '+' prefix before 4-letter uppercase identifiers (e.g., +ABCD → ABCD)
+        text = Regex.Replace(text, @"(?<=\+)([A-Z]{4})", "$1");
+
+        // Remove all asterisk '*' characters
+        text = Regex.Replace(text, @"\*", "");
+
+        // Remove leading caret '^' from runway identifiers (e.g. ^25L → 25L)
+        text = Regex.Replace(text, @"(?<![\w\d])\^((?:0?[1-9]|[1-2][0-9]|3[0-6])(?:[LRC]?))(?![\w\d])", "$1");
+
+        return text;
+    }
+
+    private async Task PostIdsUpdate(AtisStation station, IdsUpdateRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (Debugger.IsAttached)
+            return;
+
+        if (string.IsNullOrEmpty(station.IdsEndpoint))
+            return;
+
+        try
+        {
+            ArgumentNullException.ThrowIfNull(_downloader);
+
+            var jsonSerialized = JsonSerializer.Serialize(request, SourceGenerationContext.NewDefault.IdsUpdateRequest);
+            await _downloader.PostJson(station.IdsEndpoint, jsonSerialized, cancellationToken: cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore
+        }
+        catch (HttpRequestException ex)
+        {
+            Log.Error(ex, "HttpRequestException updating IDS");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to update IDS");
+            throw new AtisBuilderException($"Failed to Update IDS: {ex.Message}");
+        }
+    }
+
+    private async Task<string?> GetExternalAtis(string? url, string currentAtisLetter, string? rawMetar,
+        ExternalGenerator? externalGenerator)
+    {
+        if (_downloader == null || string.IsNullOrEmpty(url))
+            return null;
+
+        if (!url.StartsWith("http://") && !url.StartsWith("https://"))
+        {
+            url = "http://" + url;
+        }
+
+        url = url.Replace("$metar", HttpUtility.UrlEncode(rawMetar))
+            .Replace("$arrrwy", HttpUtility.UrlEncode(externalGenerator?.Arrival))
+            .Replace("$deprwy", HttpUtility.UrlEncode(externalGenerator?.Departure))
+            .Replace("$app", HttpUtility.UrlEncode(externalGenerator?.Approaches))
+            .Replace("$remarks", HttpUtility.UrlEncode(externalGenerator?.Remarks))
+            .Replace("$atiscode", currentAtisLetter);
+
+        var response = await _downloader.DownloadStringAsync(url);
+
+        // clean-up response
+        response = Regex.Replace(response, @"\[(.*?)\]", " $1 ");
+        response = Regex.Replace(response, @"\s+", " ");
+
+        // Replace <br> and <br/> tags with \n
+        response = Regex.Replace(response, @"<br\s*/?>", "\n");
+
+        // Split the string into lines, trim each line, and join back with \n
+        var result = string.Join("\n",
+            response.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
+        return result.Trim();
+    }
+
+    private async Task<(string? SpokenText, byte[]? AudioBytes)> CreateVoiceAtis(AtisStation station, AtisPreset preset,
+        char currentAtisLetter, List<AtisVariable> variables, DecodedMetar metar, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var template = preset.Template ?? "";
+
+        template = ReplaceContractionVariable(template, station, voiceVariable: true);
+        template = ReplaceQfeVariables(template, metar, voiceVariable: true);
+
+        // Custom station altimeter
+        try
+        {
+            var matches = Regex.Matches(template, @"\[PRESSURE_(\w{4})\]", RegexOptions.IgnoreCase);
+            var tasks = new List<Task<string>>();
+
+            foreach (Match match in matches)
+            {
+                tasks.Add(Task.Run(async () =>
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var icao = match.Groups[1].Value;
+                    var icaoMetar = await _metarRepository!.GetMetar(icao, triggerMessageBus: false);
+
+                    if (icaoMetar?.Pressure != null)
+                    {
+                        return icaoMetar.Pressure.Value?.ActualValue.ToSerialFormat() ?? "";
+                    }
+
+                    return "";
+                }, cancellationToken));
+            }
+
+            var results = await Task.WhenAll(tasks);
+
+            // Replace matches with results
+            for (var i = 0; i < matches.Count; i++)
+            {
+                template = template.Replace(matches[i].Value, results[i]);
+            }
+        }
+        catch
+        {
+            template = Regex.Replace(template, @"\[PRESSURE_(\w{4})\]", "", RegexOptions.IgnoreCase);
+        }
+
+        foreach (var variable in variables)
+        {
+            template = template.Replace($"[{variable.Find}:VOX]", variable.VoiceReplace);
+            template = template.Replace($"${variable.Find}:VOX", variable.VoiceReplace);
+
+            template = template.Replace($"[{variable.Find}]", variable.VoiceReplace);
+            template = template.Replace($"${variable.Find}", variable.VoiceReplace);
+
+            if (variable.Aliases != null)
+            {
+                foreach (var alias in variable.Aliases)
+                {
+                    template = template.Replace($"[{alias}:VOX]", variable.VoiceReplace);
+                    template = template.Replace($"${alias}:VOX", variable.VoiceReplace);
+
+                    template = template.Replace($"[{alias}]", variable.VoiceReplace);
+                    template = template.Replace($"${alias}", variable.VoiceReplace);
+                }
+            }
+        }
+
+        if (!preset.HasClosingVariable && station.AtisFormat.ClosingStatement.AutoIncludeClosingStatement)
+        {
+            var voiceTemplate = station.AtisFormat.ClosingStatement.Template.Voice ?? "";
+            voiceTemplate = Regex.Replace(voiceTemplate, @"{letter}", currentAtisLetter.ToString());
+            voiceTemplate = Regex.Replace(voiceTemplate, @"{letter\|word}", currentAtisLetter.ToPhonetic());
+            template += voiceTemplate;
+        }
+
+        var text = FormatForTextToSpeech(template.ToUpper(), station);
+        text = Regex.Replace(text, @"[!?.]*([!?.])", "$1"); // clean up duplicate punctuation one last time
+        text = Regex.Replace(text, "\\s+([.,!\":])", "$1");
+
+        if (station.AtisVoice.UseTextToSpeech)
+        {
+            if (_textToSpeechService == null)
+                throw new AtisBuilderException("TextToSpeech service not initialized");
+
+            var synthesizedAudio = await _textToSpeechService.RequestAudio(text, station, currentAtisLetter, cancellationToken);
+            return (text, synthesizedAudio);
+        }
+
+        if (station.AtisVoice.UseWavPack)
+            return BuildWavPackAudio(text, station);
+
+        return (text, null);
+    }
+
+    private (string SpokenText, byte[] Pcm) BuildWavPackAudio(string text, AtisStation station)
+    {
+        var packFolder = WavPackLibrary.ResolveFolder(station.AtisVoice) ??
+                         throw new AtisBuilderException(
+                             "This station's WAV voice pack was not found. Choose a voice pack in the ATIS configuration.");
+
+        try
+        {
+            var result = _wavPackService.Build(text, packFolder);
+            if (result.Pcm == null)
+            {
+                throw new AtisBuilderException(
+                    $"Voice pack is missing clips for: {string.Join(", ", result.MissingTokens)}. Spoken text: {text}");
+            }
+
+            return (text, result.Pcm);
+        }
+        catch (Exception ex) when (ex is WavPackException or InvalidOperationException or System.IO.IOException)
+        {
+            throw new AtisBuilderException($"Failed to build voice ATIS from WAV pack: {ex.Message}");
+        }
+    }
+
+    private async Task<string> CreateTextAtis(AtisStation station, AtisPreset preset, char currentAtisLetter,
+        List<AtisVariable> variables, DecodedMetar metar)
+    {
+        var template = preset.Template ?? "";
+
+        template = ReplaceContractionVariable(template, station, voiceVariable: false);
+        template = ReplaceQfeVariables(template, metar, voiceVariable: false);
+
+        foreach (var variable in variables)
+        {
+            var replacements = new[]
+            {
+                ($"[{variable.Find}:VOX]", variable.VoiceReplace),
+                ($"${variable.Find}:VOX", variable.VoiceReplace),
+                ($"[{variable.Find}]", variable.TextReplace),
+                ($"${variable.Find}", variable.TextReplace)
+            };
+
+            foreach (var (placeholder, replacement) in replacements)
+            {
+                if (string.IsNullOrEmpty(replacement))
+                {
+                    // Remove line if it ONLY contains this placeholder (ignoring whitespace)
+                    template = Regex.Replace(template,
+                        $@"^[^\S\r\n]*{Regex.Escape(placeholder)}[^\S\r\n]*\r?\n",
+                        "",
+                        RegexOptions.Multiline);
+
+                    // Also remove inline occurrences
+                    template = template.Replace(placeholder, "");
+                }
+                else
+                {
+                    // Normal replacement
+                    template = template.Replace(placeholder, replacement);
+                }
+            }
+
+            // Handle aliases if they exist
+            if (variable.Aliases != null)
+            {
+                foreach (var alias in variable.Aliases)
+                {
+                    var aliasReplacements = new[]
+                    {
+                        ($"[{alias}:VOX]", variable.VoiceReplace),
+                        ($"${alias}:VOX", variable.VoiceReplace),
+                        ($"[{alias}]", variable.TextReplace),
+                        ($"${alias}", variable.TextReplace)
+                    };
+
+                    foreach (var (aliasPlaceholder, aliasReplacement) in aliasReplacements)
+                    {
+                        if (string.IsNullOrEmpty(aliasReplacement))
+                        {
+                            // Remove line if it ONLY contains this placeholder (ignoring whitespace)
+                            template = Regex.Replace(template,
+                                $@"^[^\S\r\n]*{Regex.Escape(aliasPlaceholder)}[^\S\r\n]*\r?\n",
+                                "",
+                                RegexOptions.Multiline);
+
+                            // Also remove inline occurrences
+                            template = template.Replace(aliasPlaceholder, "");
+                        }
+                        else
+                        {
+                            template = template.Replace(aliasPlaceholder, aliasReplacement);
+                        }
+                    }
+                }
+            }
+        }
+
+        try
+        {
+            var matches = Regex.Matches(template, @"\[PRESSURE_(\w{4})\]", RegexOptions.IgnoreCase);
+            var tasks = new List<Task<string>>();
+
+            foreach (Match match in matches)
+            {
+                tasks.Add(Task.Run(async () =>
+                {
+                    var icao = match.Groups[1].Value;
+                    var icaoMetar = await _metarRepository!.GetMetar(icao, triggerMessageBus: false);
+
+                    if (icaoMetar?.Pressure != null)
+                    {
+                        return icaoMetar.Pressure.Value?.ActualValue.ToString(CultureInfo.InvariantCulture) ?? "";
+                    }
+
+                    return "";
+                }));
+            }
+
+            var results = await Task.WhenAll(tasks);
+
+            // Replace matches with results
+            for (var i = 0; i < matches.Count; i++)
+            {
+                template = template.Replace(matches[i].Value, results[i]);
+            }
+        }
+        catch
+        {
+            template = Regex.Replace(template, @"\[PRESSURE_(\w{4})\]", "", RegexOptions.IgnoreCase);
+        }
+
+        if (!preset.HasClosingVariable && station.AtisFormat.ClosingStatement.AutoIncludeClosingStatement)
+        {
+            var closingTemplate = station.AtisFormat.ClosingStatement.Template.Text ?? "";
+            closingTemplate = Regex.Replace(closingTemplate, @"{letter}", currentAtisLetter.ToString());
+            closingTemplate = Regex.Replace(closingTemplate, @"{letter\|word}", currentAtisLetter.ToPhonetic());
+            template += closingTemplate;
+        }
+
+        // Remove text parsing characters
+        template = RemoveTextParsingCharacters(template);
+
+        return template;
+    }
+
+    private async Task<List<AtisVariable>> ParseNodesFromMetar(AtisStation station, AtisPreset preset,
+        DecodedMetar metar, Airport airportData, char currentAtisLetter)
+    {
+        var time = NodeParser.Parse<ObservationTimeNode, string>(metar, station);
+        var surfaceWind = NodeParser.Parse<SurfaceWindNode, SurfaceWind>(metar, station);
+        var rvr = NodeParser.Parse<RunwayVisualRangeNode, RunwayVisualRange>(metar, station);
+        var visibility = NodeParser.Parse<PrevailingVisibilityNode, Visibility>(metar, station);
+        var presentWeather = NodeParser.Parse<PresentWeatherNode, WeatherPhenomenon>(metar, station);
+        var clouds = NodeParser.Parse<CloudNode, CloudLayer>(metar, station);
+        var temp = NodeParser.Parse<TemperatureNode, Value>(metar, station);
+        var dew = NodeParser.Parse<DewpointNode, Value>(metar, station);
+        var pressure = await NodeParser.Parse<AltimeterSettingNode, Value>(metar, station,
+            _metarRepository ?? throw new InvalidOperationException());
+        var trends = NodeParser.Parse<TrendNode, TrendForecast>(metar, station);
+        var recentWeather = NodeParser.Parse<RecentWeatherNode, WeatherPhenomenon>(metar, station);
+        var windshear = NodeParser.Parse<WindShearNode, string>(metar, station);
+        var runwayCondition = NodeParser.Parse<RunwayConditionNode, RunwayCondition>(metar, station);
+        var remarkWind = NodeParser.Parse<RemarkWindNode, RemarkWind>(metar, station);
+        var autoNode = new AutoObservationNode { Station = station };
+        autoNode.Parse(metar);
+        var autoText = autoNode.TextAtis ?? "";
+        var autoVoice = string.IsNullOrEmpty(autoNode.VoiceAtis) ? "" : $"{autoNode.VoiceAtis}.";
+
+        var completeWxStringVoice =
+            $"{surfaceWind.VoiceAtis} {visibility.VoiceAtis} {rvr.VoiceAtis} {presentWeather.VoiceAtis} {clouds.VoiceAtis} {temp.VoiceAtis} {dew.VoiceAtis} {pressure.VoiceAtis} {recentWeather.VoiceAtis} {windshear.VoiceAtis} {runwayCondition.VoiceAtis} {trends.VoiceAtis}";
+        var completeWxStringAcars =
+            $"{surfaceWind.TextAtis} {visibility.TextAtis} {rvr.TextAtis} {presentWeather.TextAtis} {clouds.TextAtis} {temp.TextAtis}{(!string.IsNullOrEmpty(temp.TextAtis) || !string.IsNullOrEmpty(dew.TextAtis) ? "/" : "")}{dew.TextAtis} {pressure.TextAtis} {recentWeather.TextAtis} {windshear.TextAtis} {runwayCondition.TextAtis} {trends.TextAtis}";
+
+        var airportConditions = "";
+        var acCustom = false;
+        if (!string.IsNullOrEmpty(preset.AirportConditions) || station.AirportConditionDefinitions.Any(x => x.Enabled))
+        {
+            var acDefinitions = station.AirportConditionDefinitions.Where(t => t.Enabled).OrderBy(t => t.Ordinal).ToList();
+            acCustom = StaticDefinitionJoiner.HasCustomSeparators(acDefinitions, station.AirportConditionsSeparator);
+            var acStatic = StaticDefinitionJoiner.Join(acDefinitions, station.AirportConditionsSeparator);
+            var acFree = StaticDefinitionJoiner.Prepare(preset.AirportConditions, acCustom);
+
+            airportConditions = string.Join(" ", (station.AirportConditionsBeforeFreeText
+                ? new[] { acStatic, acFree }
+                : new[] { acFree, acStatic }).Where(s => !string.IsNullOrWhiteSpace(s)));
+        }
+
+        // clean up duplicate punctuation
+        airportConditions = StaticDefinitionJoiner.Finish(airportConditions, acCustom);
+
+        // replace contraction variables
+        var airportConditionsText = ReplaceContractionVariable(airportConditions, station, voiceVariable: false);
+        var airportConditionsVoice = ReplaceContractionVariable(airportConditions, station, voiceVariable: true);
+
+        // remove text parsing characters
+        airportConditionsText = RemoveTextParsingCharacters(airportConditionsText);
+
+        var notams = "";
+        var notamsText = "";
+        var notamsVoice = "";
+        var notamsCustom = false;
+        if (!string.IsNullOrEmpty(preset.Notams) || station.NotamDefinitions.Any(x => x.Enabled))
+        {
+            var notamDefinitions = station.NotamDefinitions.Where(x => x.Enabled).OrderBy(x => x.Ordinal).ToList();
+            notamsCustom = StaticDefinitionJoiner.HasCustomSeparators(notamDefinitions, station.NotamsSeparator);
+            var notamStatic = StaticDefinitionJoiner.Join(notamDefinitions, station.NotamsSeparator);
+            var notamFree = StaticDefinitionJoiner.Prepare(preset.Notams, notamsCustom);
+
+            notams += string.Join(". ", (station.NotamsBeforeFreeText
+                ? new[] { notamStatic, notamFree }
+                : new[] { notamFree, notamStatic }).Where(s => !string.IsNullOrWhiteSpace(s)));
+
+            // strip extraneous punctuation
+            notams = StaticDefinitionJoiner.Finish(notams, notamsCustom);
+
+            // Add space to end of NOTAMs
+            notams = notams.Trim() + " ";
+        }
+
+        if (!string.IsNullOrEmpty(notams))
+        {
+            var template = station.AtisFormat.Notams.Template;
+            if (template.Text != null)
+            {
+                notamsText = Regex.Replace(template.Text, "{notams}", notams, RegexOptions.IgnoreCase);
+
+                // replace contraction variables
+                notamsText = ReplaceContractionVariable(notamsText, station, voiceVariable: false);
+
+                // remove text parsing characters
+                notamsText = RemoveTextParsingCharacters(notamsText);
+            }
+
+            if (template.Voice != null)
+            {
+                notamsVoice = Regex.Replace(template.Voice, "{notams}", notams, RegexOptions.IgnoreCase);
+
+                // replace contraction variables
+                notamsVoice = ReplaceContractionVariable(notamsVoice, station, voiceVariable: true);
+            }
+        }
+
+        // Strip extra spaces from weather string.
+        completeWxStringAcars = Regex.Replace(completeWxStringAcars, @"\s+", " ");
+        completeWxStringVoice = Regex.Replace(completeWxStringVoice, @"\s+", " ");
+
+        var variables = new List<AtisVariable>
+        {
+            new("FACILITY", airportData.Id, airportData.Name),
+            new("ATIS_LETTER", currentAtisLetter.ToString(), currentAtisLetter.ToPhonetic(),
+                ["LETTER", "ATIS_CODE", "ID"]),
+            new("TIME", time.TextAtis, time.VoiceAtis, ["OBS_TIME", "OBSTIME"]),
+            new("WIND", surfaceWind.TextAtis, surfaceWind.VoiceAtis, ["SURFACE_WIND"]),
+            new("RVR", rvr.TextAtis, rvr.VoiceAtis),
+            new("VIS", visibility.TextAtis, visibility.VoiceAtis, ["PREVAILING_VISIBILITY"]),
+            new("PRESENT_WX", presentWeather.TextAtis, presentWeather.VoiceAtis, ["PRESENT_WEATHER"]),
+            new("CLOUDS", clouds.TextAtis, clouds.VoiceAtis),
+            new("TEMP", temp.TextAtis, temp.VoiceAtis),
+            new("DEW", dew.TextAtis, dew.VoiceAtis),
+            new("PRESSURE", pressure.TextAtis, pressure.VoiceAtis, ["QNH"]),
+            new("WX", completeWxStringAcars.Trim(), completeWxStringVoice, ["FULL_WX_STRING"]),
+            new("ARPT_COND", airportConditionsText, airportConditionsVoice, ["ARRDEP"]),
+            new("NOTAMS", notamsText, notamsVoice),
+            new("TREND", trends.TextAtis, trends.VoiceAtis),
+            new("RECENT_WX", recentWeather.TextAtis, recentWeather.VoiceAtis),
+            new("WS", windshear.TextAtis, windshear.VoiceAtis),
+            new("RWY_COND", runwayCondition.TextAtis, runwayCondition.VoiceAtis, ["RUNWAY_CONDITION"]),
+            new("RMK_WIND", remarkWind.TextAtis, remarkWind.VoiceAtis),
+            new("AUTO", autoText, autoVoice),
+            new("METAR", metar.RawMetar?.Trim() ?? "", metar.RawMetar?.Trim() ?? "")
+        };
+
+        if (!station.IsFaaAtis)
+        {
+            var trl = station.AtisFormat.TransitionLevel.Values.FirstOrDefault(t =>
+                metar.Pressure?.Value?.ActualValue >= t.Low && metar.Pressure.Value?.ActualValue <= t.High);
+
+            if (trl != null)
+            {
+                var trlTemplateText = station.AtisFormat.TransitionLevel.Template.Text;
+                if (trlTemplateText != null)
+                {
+                    trlTemplateText = TransitionLevelFormatter.Format(trlTemplateText, trl.Altitude);
+                }
+
+                var trlTemplateVoice = station.AtisFormat.TransitionLevel.Template.Voice;
+                if (trlTemplateVoice != null)
+                {
+                    trlTemplateVoice = TransitionLevelFormatter.Format(trlTemplateVoice, trl.Altitude);
+                }
+
+                variables.Add(new AtisVariable("TL", trlTemplateText ?? "", trlTemplateVoice ?? ""));
+            }
+            else
+            {
+                variables.Add(new AtisVariable("TL", "", ""));
+            }
+        }
+
+        var closingTextTemplate = station.AtisFormat.ClosingStatement.Template.Text;
+        var closingVoiceTemplate = station.AtisFormat.ClosingStatement.Template.Voice;
+
+        if (!string.IsNullOrEmpty(closingTextTemplate))
+        {
+            closingTextTemplate = Regex.Replace(closingTextTemplate, @"{letter}", currentAtisLetter.ToString());
+            closingTextTemplate = Regex.Replace(closingTextTemplate, @"{letter\|word}", currentAtisLetter.ToPhonetic());
+        }
+
+        if (!string.IsNullOrEmpty(closingVoiceTemplate))
+        {
+            closingVoiceTemplate = Regex.Replace(closingVoiceTemplate, @"{letter}", currentAtisLetter.ToString());
+            closingVoiceTemplate = Regex.Replace(closingVoiceTemplate, @"{letter\|word}", currentAtisLetter.ToPhonetic());
+        }
+
+        variables.Add(new AtisVariable("CLOSING", closingTextTemplate ?? "", closingVoiceTemplate ?? ""));
+
+        return variables;
+    }
+
+    private string FormatForTextToSpeech(string input, AtisStation station)
+    {
+        input = Regex.Replace(input, @"@([A-Z]+_?)+", match =>
+        {
+            var key = match.Value; // Get the matched variable
+            var variable = station.Contractions.Find(v => v.VariableName == key); // Find matching variable
+            return variable != null ? variable.Voice ?? "" : ""; // Replace or remove if not found
+        });
+
+        // airports and navaid identifiers
+        var navdataMatches = Regex.Matches(input, @"\+([A-Z0-9]{3,4})");
+        if (navdataMatches.Count > 0)
+        {
+            foreach (Match match in navdataMatches)
+            {
+                if (match.Groups.Count == 0)
+                    continue;
+
+                var navaid = _navDataRepository?.GetNavaid(match.Groups[1].Value);
+                if (navaid != null)
+                {
+                    input = Regex.Replace(input, $@"(?<![\w\d]){Regex.Escape(match.Value)}(?![\w\d])", navaid.Name);
+                }
+                else
+                {
+                    var airport = _navDataRepository?.GetAirport(match.Groups[1].Value);
+                    if (airport != null)
+                    {
+                        input = Regex.Replace(input, $@"(?<![\w\d]){Regex.Escape(match.Value)}(?![\w\d])",
+                            airport.Name);
+                    }
+                }
+            }
+        }
+
+        // parse zulu times
+        input = Regex.Replace(input, @"([0-9])([0-9])([0-9])([0-8])Z",
+            m => string.Format($"{int.Parse(m.Groups[1].Value).ToSerialFormat()} " +
+                               $"{int.Parse(m.Groups[2].Value).ToSerialFormat()} " +
+                               $"{int.Parse(m.Groups[3].Value).ToSerialFormat()} " +
+                               $"{int.Parse(m.Groups[4].Value).ToSerialFormat()} zulu"));
+
+        // vhf frequencies
+        input = Regex.Replace(input, @"(1\d\d\.\d\d?\d?)",
+            m => m.Groups[1].Value.ToSerialFormat(station.UseDecimalTerminology) ?? string.Empty);
+
+        // letters
+        input = Regex.Replace(input, @"\*([A-Z]{1,2}[0-9]{0,2})", m => m.Value.ToAlphaNumericWordGroup()).Trim();
+
+        // parse taxiways and runways
+        input = TaxiwayRunwayFormatter.Format(input, leadingZero: !station.IsFaaAtis);
+
+        // parse individual runway: ^18R, ^01C, ^36
+        var runwayMatches = Regex.Matches(input, @"\^(0[1-9]|1[0-9]|2[0-9]|3[0-6]|[1-9])([RLC]?)");
+        if (runwayMatches.Count > 0)
+        {
+            foreach (Match rwy in runwayMatches)
+            {
+                var designator = "";
+                switch (rwy.Groups[2].Value)
+                {
+                    case "L":
+                        designator = "left";
+                        break;
+                    case "R":
+                        designator = "right";
+                        break;
+                    case "C":
+                        designator = "center";
+                        break;
+                }
+
+                var replace = int.Parse(rwy.Groups[1].Value).ToSerialFormat(leadingZero: !station.IsFaaAtis) + " " +
+                              designator;
+                input = Regex.Replace(input, $@"(?<![\w\d]){Regex.Escape(rwy.Value)}(?![\w\d])", replace.Trim());
+            }
+        }
+
+        // read numbers in group format, prefixed with # or surrounded with {}
+        input = Regex.Replace(input, @"\*(-?[\,0-9]+)",
+            m => int.Parse(m.Groups[1].Value.Replace(",", "")).ToGroupForm());
+        input = Regex.Replace(input, @"\{(-?[\,0-9]+)\}",
+            m => int.Parse(m.Groups[1].Value.Replace(",", "")).ToGroupForm());
+
+        // read numbers in serial format
+        input = Regex.Replace(input, @"([+-])?([0-9]+\.[0-9]+|[0-9]+|\.[0-9]+)(?![^{]*\})",
+            m => m.Value.ToSerialFormat(station.UseDecimalTerminology) ?? string.Empty);
+
+        input = Regex.Replace(input, @"(?<=\*)(-?[\,0-9]+)", "$1");
+        input = Regex.Replace(input, @"(?<=\#)(-?[\,0-9]+)", "$1");
+        input = Regex.Replace(input, @"\{(-?[\,0-9]+)\}", "$1");
+        input = Regex.Replace(input, @"(?<=\+)([A-Z]{3})", "$1");
+        input = Regex.Replace(input, @"(?<=\+)([A-Z]{4})", "$1");
+        input = Regex.Replace(input, @"[!?.]*([!?.])", "$1 "); // clean up duplicate punctuation
+        input = Regex.Replace(input, "\\s+([.,!\":])", "$1 ");
+        input = Regex.Replace(input, @"\s+", " ");
+        input = Regex.Replace(input, @"\s\,", ",");
+        input = Regex.Replace(input, @"\&", "and");
+        input = Regex.Replace(input, @"\*", "");
+        input = Regex.Replace(input, @"\^", "");
+
+        return input.ToUpper();
+    }
+}
