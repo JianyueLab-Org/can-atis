@@ -12,7 +12,7 @@
         <AssemblyName>atis-for-can</AssemblyName>
         <RootNamespace>CanAtis</RootNamespace>
 		<ApplicationIcon>Assets\MainIcon.ico</ApplicationIcon>
-        <Version>0.0.1</Version>
+        <Version>1.0.0</Version>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' != 'Debug'">
@@ -33,22 +33,6 @@
 		<ContentWithTargetPath Include="Assets\MainIcon.ico">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<TargetPath>Assets\MainIcon.ico</TargetPath>
-		</ContentWithTargetPath>
-		<ContentWithTargetPath Include="can_mumble_worker.py">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<TargetPath>can_mumble_worker.py</TargetPath>
-		</ContentWithTargetPath>
-		<ContentWithTargetPath Include="mumblecompat.py">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<TargetPath>mumblecompat.py</TargetPath>
-		</ContentWithTargetPath>
-		<ContentWithTargetPath Include="requirements-mumble.txt">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<TargetPath>requirements-mumble.txt</TargetPath>
-		</ContentWithTargetPath>
-		<ContentWithTargetPath Include="..\..\atis\opus.dll" Condition="Exists('..\..\atis\opus.dll')">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<TargetPath>opus.dll</TargetPath>
 		</ContentWithTargetPath>
 		<ContentWithTargetPath Include="Data\airports.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>

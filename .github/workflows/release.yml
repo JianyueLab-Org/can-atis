@@ -1,0 +1,199 @@
+# 推到 main 就打包、自动进一位补丁号、发 Release。流程照搬 can-audio Archive 分支的
+# release.yml。
+#
+# 版本号规则：**只有 v1.0.xxx 的 xxx 会自动动。** 主版本和次版本（1.0）是人的
+# 决定，写在 src/CanAtis.Desktop/CanAtis.Desktop.csproj 的 <Version> 里；补丁号由
+# 这个工作流数已有的 v1.0.* 标签得出，取最大的那个加一，一个都没有就是 v1.0.0。
+# 想发 1.1 就把 <Version> 改成 1.1.0，并把下面的 SERIES 一起改。
+#
+# **两边必须同时改。** version 这一步会核对 <Version> 是不是 SERIES 系列，
+# 对不上直接失败——否则从源码跑的人和下载发行版的人会看到两个版本号。
+#
+# 为什么不让 csproj 自己维护补丁号：那需要每次发版都回推一个提交改文件，
+# 而那个提交又会触发这个工作流，自己咬自己。数标签没有这个问题——标签就是
+# 已发布版本的唯一事实来源。
+#
+# 语音发送进程（Python）不在这个仓库里：每次都从 can-audio 的 CAN_AUDIO_REF
+# 分支拉最新的 atis-worker/ 现编，打成 can-voice-worker.exe 嵌进
+# atis-for-can.exe。用的是哪个提交写在 Release 说明里。
+#
+# 只能在 Windows 上打：NativeAudio.dll、opus.dll 都是 Windows 的，
+# PyInstaller 也不支持交叉编译。
+
+name: 打包与发布
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write        # 打标签、建 Release 都要写权限
+
+# 两次推送挨得很近时会同时算出同一个补丁号，然后第二个打标签失败。
+# 串行化，后面那个会重新数一遍。
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  SERIES: "1.0"                  # 自动递增只在这个系列里进行；要和 csproj 的 <Version> 同系列
+  CAN_AUDIO_REF: new-client-sys  # 语音发送进程从 can-audio 的这个分支拉
+  # runner 的 stdout 默认是 cp1252，而 can-audio 的 requirements 和测试输出里有中文
+  PYTHONUTF8: '1'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      number: ${{ steps.next.outputs.number }}   # 1.0.7
+      tag: ${{ steps.next.outputs.tag }}         # v1.0.7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # 要看到全部标签
+      - id: next
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          declared=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' src/CanAtis.Desktop/CanAtis.Desktop.csproj | head -1)
+          case "$declared" in
+            "${SERIES}".*) ;;
+            *) echo "::error::csproj 的 <Version> 是 ${declared}，不在 SERIES ${SERIES} 里；两边要一起改"; exit 1 ;;
+          esac
+          # 只看本系列的标签，取补丁号最大的那个。一个都没有就从 0 开始。
+          latest=$(git tag -l "v${SERIES}.*" \
+                   | sed -n "s/^v${SERIES}\.\([0-9][0-9]*\)$/\1/p" \
+                   | sort -n | tail -1)
+          next=$(( ${latest:--1} + 1 ))
+          echo "number=${SERIES}.${next}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${SERIES}.${next}"   >> "$GITHUB_OUTPUT"
+          echo "上一个补丁号 ${latest:-（无）}，这次发 v${SERIES}.${next}"
+
+  test:
+    # 和 build 并行。测试没过就不发——release 同时依赖两者。
+    # Python 那半边的测试在 build 里跑（build-single-file.ps1 先跑 can-audio 的
+    # atis-worker 测试，再打包）。
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: .NET 单元测试
+        # 用默认的 Debug：Release 配置给桌面项目开了 SelfContained，不带 -r 构建会报 NETSDK1031
+        run: dotnet test src/CanAtis.Desktop.Tests/CanAtis.Desktop.Tests.csproj
+
+  build:
+    needs: version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 拉 can-audio 最新的语音发送进程
+        uses: actions/checkout@v4
+        with:
+          repository: JianyueLab-Org/can-audio
+          ref: ${{ env.CAN_AUDIO_REF }}
+          path: build/can-audio
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'   # can-audio 的依赖钉在 3.12
+          cache: pip
+          # 默认只认 requirements.txt / pyproject.toml，不指明会直接报错
+          cache-dependency-path: |
+            build/can-audio/requirements-build.txt
+            build/can-audio/requirements-voice.txt
+
+      - name: 装 can-audio 的打包依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r build/can-audio/requirements-build.txt
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: 打包 atis-for-can.exe
+        shell: pwsh
+        # 跑 can-audio 的 atis-worker 测试 → PyInstaller → 语音进程自检 →
+        # dotnet publish 单文件 → atis-for-can.exe --self-test
+        run: ./build-single-file.ps1 -CanAudio build/can-audio -Version ${{ needs.version.outputs.number }}
+
+      - name: 验版本号
+        shell: pwsh
+        run: |
+          $exe = "release/can-atis-single-file/atis-for-can.exe"
+          $product = (Get-Item $exe).VersionInfo.ProductVersion
+          if ($product -ne "${{ needs.version.outputs.number }}") {
+            throw "exe 里的版本号是 $product，应当是 ${{ needs.version.outputs.number }}"
+          }
+          Write-Output "atis-for-can.exe $product，can-audio $(Get-Content release/can-atis-single-file/can-audio-commit.txt)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: atis-for-can
+          path: |
+            release/can-atis-single-file/atis-for-can.exe
+            release/can-atis-single-file/can-audio-commit.txt
+          if-no-files-found: error
+
+  release:
+    # 只有推到 main 才发。手动触发只出产物挂在 Actions 里，方便试包而不占版本号。
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [version, test, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: atis-for-can
+          path: packages
+
+      - name: 生成 SHA-256 清单和发布说明
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd packages && sha256sum atis-for-can.exe > SHA256SUMS)
+          commit=$(tr -d '\r\n' < packages/can-audio-commit.txt)
+          notes="doc/releases/${{ needs.version.outputs.tag }}.md"
+          {
+            echo "## 下载"
+            echo
+            echo "Windows x64：下载 \`atis-for-can.exe\` 直接运行。已内置 .NET 运行时、语音发送进程、Opus、原生音频库和机场数据，无需另装 .NET 或 Python。"
+            echo
+            echo "语音发送进程来自 [can-audio@${commit:0:7}](https://github.com/JianyueLab-Org/can-audio/tree/${commit}/atis-worker)（\`${CAN_AUDIO_REF}\` 分支）。"
+            if [ -f "$notes" ]; then
+              echo
+              # 第一行是标题，Release 已经有名字了
+              tail -n +2 "$notes"
+            fi
+          } > release-notes.md
+          cat release-notes.md
+
+      - name: 打标签
+        # 标签是"已发布版本"的唯一事实来源，下一次就靠它算补丁号
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ needs.version.outputs.tag }}" \
+                  -m "${{ needs.version.outputs.tag }}"
+          git push origin "${{ needs.version.outputs.tag }}"
+
+      - name: 建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: ATIS for CAN ${{ needs.version.outputs.tag }}
+          body_path: release-notes.md
+          generate_release_notes: true
+          files: |
+            packages/atis-for-can.exe
+            packages/SHA256SUMS

@@ -1,7 +1,7 @@
 # ATIS for CAN
 
-The C# desktop release series starts at **0.0.1**. Download the Windows x64
-single-file executable from [GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases).
+The current stable release is **1.0.0**, the first official release of the C#
+desktop client. Download the Windows x64 single-file executable from [GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases).
 
 ATIS for CAN is the ATIS desktop client for the **Cerulean Aviation Network**.
 It is based on the ATIS workflow and editor from the original project, but its
@@ -80,16 +80,42 @@ dotnet run --project src/CanAtis.Desktop
 
 ### Single-file Windows release
 
+The Python voice worker is **not in this repository**. It is maintained together
+with the Python side in [can-audio](https://github.com/JianyueLab-Org/can-audio)
+(`new-client-sys` branch, `atis-worker/`), and every build compiles the latest
+version from there.
+
 ```powershell
-# In a Python environment with the dependencies from requirements-mumble.txt and PyInstaller:
-./build-single-file.ps1 -Python python -OpusDll C:/path/to/opus.dll
+# Python 3.12 x64 with can-audio's requirements-build.txt installed:
+./build-single-file.ps1 -Python C:/path/to/python.exe -CanAudio C:/path/to/can-audio
 ```
 
-Output: `release/can-atis-single-file/atis-for-can.exe`. The executable embeds
-the .NET runtime, native audio, airport data, and the frozen Python voice worker
+Without `-CanAudio`, the script clones can-audio's `new-client-sys` branch into
+`build/can-audio`. It runs can-audio's `atis-worker` tests, freezes the worker
+with PyInstaller as `can-voice-worker.exe`, publishes the single-file client,
+and runs `atis-for-can.exe --self-test`.
+
+Output: `release/can-atis-single-file/atis-for-can.exe`, plus
+`can-audio-commit.txt` naming the can-audio commit that was used. The executable
+embeds the .NET runtime, native audio, airport data, and the frozen voice worker
 (including pymumble-udp and Opus). Only the executable needs to be distributed;
 runtime files are extracted automatically. `atis-for-can.exe --self-test` checks
 the bundled airport data, native audio initialization, and voice worker startup.
+
+When running from source there is no embedded worker. Point `CAN_VOICE_WORKER`
+at can-audio's `atis-worker/can_mumble_worker.py` (and `CAN_PYTHON` at a Python
+with can-audio's `requirements-voice.txt`), or at a built `can-voice-worker.exe`.
+
+### Releases
+
+`.github/workflows/release.yml` builds and releases on every push to `main`,
+following can-audio's release workflow: the patch number is the highest existing
+`v1.0.*` tag plus one (the first release is `v1.0.0`), the workflow tags the
+commit and publishes `atis-for-can.exe` with a `SHA256SUMS` file. The major and
+minor version live in `<Version>` in `CanAtis.Desktop.csproj`; change it together
+with `SERIES` in the workflow. Release notes in `doc/releases/v<version>.md` are
+added to the release when present. A manual run (`workflow_dispatch`) only
+uploads the build as an Actions artifact.
 
 Login uses the member's CAN ID, name and network password. No controller rating
 selection is required; the FSD connection advertises the ATIS facility and the
@@ -138,11 +164,12 @@ project file. The executable is `atis-for-can.exe`.
 ## Repository layout
 
 ```text
-src/CanAtis.Desktop/       C# CAN ATIS desktop application and required voice bridge
+src/CanAtis.Desktop/       C# CAN ATIS desktop application
 src/CanAtis.Desktop.Tests/ Desktop and ATIS tests
 src/Can.Network/           FSD protocol library used by the client
 NativeAudio/              Native audio backend and CMake build
 build-single-file.ps1     Windows self-contained single-file release build
+.github/workflows/        Release workflow (build, tag, GitHub Release)
 ```
 
 ## License

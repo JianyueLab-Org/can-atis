@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Linq;
@@ -88,17 +89,19 @@ public class VoiceServerConnection : IVoiceServerConnection
 
         cancellationToken.ThrowIfCancellationRequested();
         StopMumbleWorker();
-        var bundled = BundledVoiceWorker.GetPath();
-        var worker = bundled ?? WorkerPath();
-        if (!File.Exists(worker))
-            throw new AtisBuilderException($"CAN Mumble worker is missing: {worker}");
+        var worker = BundledVoiceWorker.GetPath() ?? DevelopmentWorkerPath();
+        if (worker == null || !File.Exists(worker))
+            throw new AtisBuilderException(
+                "CAN Mumble worker is missing. Release builds embed it; from source, set CAN_VOICE_WORKER " +
+                "to can-audio's atis-worker/can_mumble_worker.py or a built can-voice-worker.exe.");
+        var isScript = worker.EndsWith(".py", StringComparison.OrdinalIgnoreCase);
 
         var frequency = dto.Transceivers?.FirstOrDefault()?.Frequency ?? 0;
         var cid = _appConfig.UserId.Trim();
         var password = _appConfig.PasswordDecrypted;
         var psi = new ProcessStartInfo
         {
-            FileName = bundled ?? PythonPath(),
+            FileName = isScript ? PythonPath() : worker,
             WorkingDirectory = Path.GetDirectoryName(worker) ?? AppContext.BaseDirectory,
             UseShellExecute = false,
             RedirectStandardInput = true,
@@ -106,14 +109,16 @@ public class VoiceServerConnection : IVoiceServerConnection
             RedirectStandardError = true,
             CreateNoWindow = true
         };
-        if (bundled == null)
+        if (isScript)
             psi.ArgumentList.Add(worker);
         psi.ArgumentList.Add("--host"); psi.ArgumentList.Add("audio.ceruleanavi.net");
         psi.ArgumentList.Add("--port"); psi.ArgumentList.Add("64738");
         psi.ArgumentList.Add("--cid"); psi.ArgumentList.Add(cid);
         psi.Environment["CAN_VOICE_PASSWORD"] = password;
         psi.ArgumentList.Add("--callsign"); psi.ArgumentList.Add(callsign);
-        psi.ArgumentList.Add("--frequency"); psi.ArgumentList.Add(frequency.ToString());
+
+        // Hz (127800000); the worker also accepts MHz and maps either to FREQ_127800.
+        psi.ArgumentList.Add("--frequency"); psi.ArgumentList.Add(frequency.ToString(CultureInfo.InvariantCulture));
         var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
         _mumbleWorker = process;
         _connectionDescription = "连接中";
@@ -261,15 +266,17 @@ public class VoiceServerConnection : IVoiceServerConnection
         }
     }
 
-    private static string WorkerPath() => Path.Combine(AppContext.BaseDirectory, "can_mumble_worker.py");
+    // The worker is maintained in JianyueLab-Org/can-audio (atis-worker/); this repository no longer carries a copy.
+    private static string? DevelopmentWorkerPath()
+    {
+        var path = Environment.GetEnvironmentVariable("CAN_VOICE_WORKER");
+        return string.IsNullOrWhiteSpace(path) ? null : Path.GetFullPath(path);
+    }
 
     private static string PythonPath()
     {
-        var projectVenv = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..", ".venv", "Scripts", "python.exe"));
-        if (File.Exists(projectVenv))
-            return projectVenv;
-        var bundled = Path.Combine(AppContext.BaseDirectory, "python", "python.exe");
-        return File.Exists(bundled) ? bundled : "python";
+        var python = Environment.GetEnvironmentVariable("CAN_PYTHON");
+        return string.IsNullOrWhiteSpace(python) ? "python" : python;
     }
 
     private async Task RefreshToken()

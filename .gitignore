@@ -417,3 +417,6 @@ NativeAudio/build-windows-x64/
 
 # Local build secrets
 scripts/env-setup.sh
+
+# 发布说明要进仓库（上面的 [Rr]eleases/ 会把它也忽略掉）
+!doc/releases/

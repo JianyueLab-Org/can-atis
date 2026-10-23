@@ -2,22 +2,16 @@
 
 ## 获取客户端
 
-从 [CAN 网站](https://ceruleanavi.net/)或 CAN 管理员公布的发布渠道获取 **ATIS for CAN**。请确认程序名为 `atis-for-can.exe`。原版 vATIS 的下载按钮安装的是原版客户端，不是 CAN 版。
+从 [GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases) 下载最新版 **ATIS for CAN**，或使用 CAN 管理员公布的发布渠道。请确认程序名为 `atis-for-can.exe`。原版 vATIS 的下载按钮安装的是原版客户端，不是 CAN 版。
 
 ## Windows 安装
 
-### 压缩包版本
+### 单文件版本
 
-1. 下载适用于 Windows x64 的完整发布包。
-2. 将压缩包**全部解压**到有写入权限的目录。
-3. 保留 DLL、Python worker、数据文件和其他随包组件的目录结构。
-4. 双击 `atis-for-can.exe`。需要时可自行创建桌面快捷方式。
+1. 下载适用于 Windows x64 的 `atis-for-can.exe`。可以用同一 Release 里的 `SHA256SUMS` 核对文件。
+2. 放到有写入权限的目录，双击运行。日志写在程序旁边的 `Logs` 文件夹。需要时可自行创建桌面快捷方式。
 
-当前仓库提供的是构建与发布流程，没有可据此确认的固定安装器路径。因此安装目录可以由用户选择，不沿用原版“必须安装在 org.vatsim.vatis”这一说明。
-
-### 语音运行环境
-
-完整发布包应由维护者配置好 `NativeAudio.dll`、Python、Mumble 依赖、`mumblecompat.py`、`can_mumble_worker.py` 和 Opus 动态库。缺少组件时，窗口可能仍能打开，但不能据此判断录音、试听或网络播音可用。
+`atis-for-can.exe` 已内置 .NET 运行时、原生音频库、机场数据，以及打包好的语音发送进程（含 Mumble 依赖和 Opus），无需另装 .NET 或 Python；首次运行会自动解压必要的运行组件。安装目录可以由用户选择，不沿用原版“必须安装在 org.vatsim.vatis”这一说明。
 
 源码运行和依赖安装见[本地开发](client/local-development.md)。Windows 客户端的 TTS 使用系统已安装的 SAPI 语音，不依赖在线 TTS 服务；如果需要其他音色，请先在 Windows 的语音设置中安装对应语音包。
 

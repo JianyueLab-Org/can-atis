@@ -11,32 +11,27 @@
 <ul>
 <li><a href="#_2">获取客户端</a></li>
 <li><a href="#windows">Windows 安装</a><ul>
-<li><a href="#_3">压缩包版本</a></li>
-<li><a href="#_4">语音运行环境</a></li>
+<li><a href="#_3">单文件版本</a></li>
 </ul>
 </li>
-<li><a href="#_5">首次运行</a></li>
-<li><a href="#_6">数据目录</a></li>
-<li><a href="#_7">更新客户端</a></li>
-<li><a href="#_8">其他系统</a></li>
+<li><a href="#_4">首次运行</a></li>
+<li><a href="#_5">数据目录</a></li>
+<li><a href="#_6">更新客户端</a></li>
+<li><a href="#_7">其他系统</a></li>
 </ul>
 </div>
 </details><h1 id="_1">安装与更新</h1>
 <h2 id="_2">获取客户端</h2>
-<p>从 <a href="https://ceruleanavi.net/">CAN 网站</a>或 CAN 管理员公布的发布渠道获取 <strong>ATIS for CAN</strong>。请确认程序名为 <code>atis-for-can.exe</code>。原版 vATIS 的下载按钮安装的是原版客户端，不是 CAN 版。</p>
+<p>从 <a href="https://github.com/JianyueLab-Org/can-atis/releases">GitHub Releases</a> 下载最新版 <strong>ATIS for CAN</strong>，或使用 CAN 管理员公布的发布渠道。请确认程序名为 <code>atis-for-can.exe</code>。原版 vATIS 的下载按钮安装的是原版客户端，不是 CAN 版。</p>
 <h2 id="windows">Windows 安装</h2>
-<h3 id="_3">压缩包版本</h3>
+<h3 id="_3">单文件版本</h3>
 <ol>
-<li>下载适用于 Windows x64 的完整发布包。</li>
-<li>将压缩包<strong>全部解压</strong>到有写入权限的目录。</li>
-<li>保留 DLL、Python worker、数据文件和其他随包组件的目录结构。</li>
-<li>双击 <code>atis-for-can.exe</code>。需要时可自行创建桌面快捷方式。</li>
+<li>下载适用于 Windows x64 的 <code>atis-for-can.exe</code>。可以用同一 Release 里的 <code>SHA256SUMS</code> 核对文件。</li>
+<li>放到有写入权限的目录，双击运行。日志写在程序旁边的 <code>Logs</code> 文件夹。需要时可自行创建桌面快捷方式。</li>
 </ol>
-<p>当前仓库提供的是构建与发布流程，没有可据此确认的固定安装器路径。因此安装目录可以由用户选择，不沿用原版“必须安装在 org.vatsim.vatis”这一说明。</p>
-<h3 id="_4">语音运行环境</h3>
-<p>完整发布包应由维护者配置好 <code>NativeAudio.dll</code>、Python、Mumble 依赖、<code>mumblecompat.py</code>、<code>can_mumble_worker.py</code> 和 Opus 动态库。缺少组件时，窗口可能仍能打开，但不能据此判断录音、试听或网络播音可用。</p>
-<p>源码运行和依赖安装见<a href="client/local-development.html">本地开发</a>。原版同款在线 TTS 的公共 CAN 服务目前尚未部署，安装客户端不会自动获得原版语音模型。</p>
-<h2 id="_5">首次运行</h2>
+<p><code>atis-for-can.exe</code> 已内置 .NET 运行时、原生音频库、机场数据，以及打包好的语音发送进程（含 Mumble 依赖和 Opus），无需另装 .NET 或 Python；首次运行会自动解压必要的运行组件。安装目录可以由用户选择，不沿用原版“必须安装在 org.vatsim.vatis”这一说明。</p>
+<p>源码运行和依赖安装见<a href="client/local-development.html">本地开发</a>。Windows 客户端的 TTS 使用系统已安装的 SAPI 语音，不依赖在线 TTS 服务；如果需要其他音色，请先在 Windows 的语音设置中安装对应语音包。</p>
+<h2 id="_4">首次运行</h2>
 <ol>
 <li>打开<a href="client/user-settings.html">用户设置</a>，填写自己的 CAN 资料。</li>
 <li>导入管制单位提供的配置，或<a href="client/profiles.html">创建配置文件</a>。</li>
@@ -44,15 +39,15 @@
 <li>选择录音、WAV 语音包或已经配置好的 TTS 服务。</li>
 <li>在<a href="client/atis-configuration/sandbox.html">沙盒</a>核对文字和音频，然后上线。</li>
 </ol>
-<h2 id="_6">数据目录</h2>
+<h2 id="_5">数据目录</h2>
 <p>Windows 用户数据位于：</p>
 <pre><code class="language-text">%LOCALAPPDATA%\ceruleanavi.atis-for-can
 </code></pre>
 <p>其中包含 <code>AppConfig.json</code>、<code>Profiles</code>、<code>VoicePacks</code> 和 <code>Logs</code> 等内容。程序文件目录与用户数据目录不是同一概念。不要把自己的 <code>AppConfig.json</code> 放入公共发布包。</p>
-<h2 id="_7">更新客户端</h2>
+<h2 id="_6">更新客户端</h2>
 <p>源码保留了自动更新机制，但它只在兼容的安装包和更新源有效时工作。当前 CAN 更新源的服务端格式尚需与 Velopack 配套验证，因此不能保证每种包都会自动更新。</p>
 <p>压缩包用户可先退出程序、备份数据目录，再按照发布说明替换完整程序目录。<strong>客户端更新</strong>与<a href="client/automatic-profile-updates.html">配置文件自动更新</a>是不同机制。</p>
-<h2 id="_8">其他系统</h2>
+<h2 id="_7">其他系统</h2>
 <p>只有 CAN 正式发布对应安装包后，才按该包说明安装 macOS 或 Linux 版本。不要将原版的 <code>.app</code>、AppImage 下载地址当作 CAN 发行版。</p>
 <div class="pager"><a href="system-requirements.html">上一页：系统要求</a><a href="client/index.html">下一页：客户端使用指南</a></div></article>
 <footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/installation.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
