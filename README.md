@@ -1,6 +1,6 @@
 # ATIS for CAN
 
-The current stable release is **3.0.0**, the first official release of the C#
+The current stable release is **3.0.1**, the latest official release of the C#
 desktop client. Download the Windows x64 single-file executable from [GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases).
 
 ATIS for CAN is the ATIS desktop client for the **Cerulean Aviation Network**.
