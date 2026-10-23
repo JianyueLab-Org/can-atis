@@ -1,10 +1,10 @@
 # 推到 main 就打包、自动进一位补丁号、发 Release。流程照搬 can-audio Archive 分支的
 # release.yml。
 #
-# 版本号规则：**只有 v1.0.xxx 的 xxx 会自动动。** 主版本和次版本（1.0）是人的
+# 版本号规则：**只有 v3.0.xxx 的 xxx 会自动动。** 主版本和次版本（3.0）是人的
 # 决定，写在 src/CanAtis.Desktop/CanAtis.Desktop.csproj 的 <Version> 里；补丁号由
-# 这个工作流数已有的 v1.0.* 标签得出，取最大的那个加一，一个都没有就是 v1.0.0。
-# 想发 1.1 就把 <Version> 改成 1.1.0，并把下面的 SERIES 一起改。
+# 这个工作流数已有的 v3.0.* 标签得出，取最大的那个加一，一个都没有就是 v3.0.0。
+# 想发 3.1 就把 <Version> 改成 3.1.0，并把下面的 SERIES 一起改。
 #
 # **两边必须同时改。** version 这一步会核对 <Version> 是不是 SERIES 系列，
 # 对不上直接失败——否则从源码跑的人和下载发行版的人会看到两个版本号。
@@ -37,7 +37,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SERIES: "1.0"                  # 自动递增只在这个系列里进行；要和 csproj 的 <Version> 同系列
+  SERIES: "3.0"                  # 自动递增只在这个系列里进行；要和 csproj 的 <Version> 同系列
   CAN_AUDIO_REF: new-client-sys  # 语音发送进程从 can-audio 的这个分支拉
   # runner 的 stdout 默认是 cp1252，而 can-audio 的 requirements 和测试输出里有中文
   PYTHONUTF8: '1'
@@ -48,8 +48,8 @@ jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
-      number: ${{ steps.next.outputs.number }}   # 1.0.7
-      tag: ${{ steps.next.outputs.tag }}         # v1.0.7
+      number: ${{ steps.next.outputs.number }}   # 3.0.7
+      tag: ${{ steps.next.outputs.tag }}         # v3.0.7
     steps:
       - uses: actions/checkout@v4
         with:

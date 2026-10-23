@@ -1,6 +1,6 @@
 # ATIS for CAN
 
-The current stable release is **1.0.0**, the first official release of the C#
+The current stable release is **3.0.0**, the first official release of the C#
 desktop client. Download the Windows x64 single-file executable from [GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases).
 
 ATIS for CAN is the ATIS desktop client for the **Cerulean Aviation Network**.
@@ -110,7 +110,7 @@ with can-audio's `requirements-voice.txt`), or at a built `can-voice-worker.exe`
 
 `.github/workflows/release.yml` builds and releases on every push to `main`,
 following can-audio's release workflow: the patch number is the highest existing
-`v1.0.*` tag plus one (the first release is `v1.0.0`), the workflow tags the
+`v3.0.*` tag plus one (the first release is `v3.0.0`), the workflow tags the
 commit and publishes `atis-for-can.exe` with a `SHA256SUMS` file. The major and
 minor version live in `<Version>` in `CanAtis.Desktop.csproj`; change it together
 with `SERIES` in the workflow. Release notes in `doc/releases/v<version>.md` are
