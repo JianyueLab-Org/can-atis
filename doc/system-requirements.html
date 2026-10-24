@@ -26,7 +26,11 @@
 <p>需要 .NET 10 SDK、Visual Studio 的“使用 C++ 的桌面开发”工作负载、CMake 和 Ninja。构建步骤见<a href="client/local-development.html">本地开发</a>。</p>
 <p>独立部署的 .NET 发布包使用 <code>--self-contained true</code> 时，无需用户另装 .NET；源码运行则需要 SDK。网络播音的语音进程维护在 can-audio 仓库，源码调试时需要 Python 3.12 及其依赖，见<a href="client/local-development.html">本地开发</a>。</p>
 <h2 id="macos-linux">macOS 与 Linux</h2>
-<p>原版文档列出 macOS 14+（Apple Silicon/x64）和现代 Linux x64。CAN 仓库虽然保留跨平台代码，但当前未验证相应发布包、原生音频库和语音 worker 的完整安装流程。以 CAN 实际发布的系统支持列表为准。</p>
+<ul>
+<li><strong>macOS</strong>：仅支持 Apple Silicon（ARM64），构建目标为 <code>osx-arm64</code>。</li>
+<li><strong>Linux</strong>：统一使用 Linux x64 版本，不单独提供 Arch Linux 版本。</li>
+</ul>
+<p>当前自动发布流程仅提供 Windows x64 包；macOS 与 Linux 的发布包、原生音频库和语音 worker 的完整安装流程尚未验证。安装时以 CAN 实际发布的安装包为准。</p>
 <div class="pager"><a href="index.html">上一页：欢迎使用</a><a href="installation.html">下一页：安装与更新</a></div></article>
 <footer>ATIS for CAN 中文改编文档 · <a href="https://vatis.app/docs/system-requirements.html">查看对应原文及原版截图</a> · <a href="#top">返回顶部</a><br>
 依据 vATIS 文档改编；CAN 功能状态以当前发布版本为准。此站不是 vATIS 官方文档。</footer></main>

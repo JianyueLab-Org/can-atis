@@ -15,4 +15,7 @@
 
 ## macOS 与 Linux
 
-原版文档列出 macOS 14+（Apple Silicon/x64）和现代 Linux x64。CAN 仓库虽然保留跨平台代码，但当前未验证相应发布包、原生音频库和语音 worker 的完整安装流程。以 CAN 实际发布的系统支持列表为准。
+- **macOS**：仅支持 Apple Silicon（ARM64），构建目标为 `osx-arm64`。
+- **Linux**：统一使用 Linux x64 版本，不单独提供 Arch Linux 版本。
+
+当前自动发布流程仅提供 Windows x64 包；macOS 与 Linux 的发布包、原生音频库和语音 worker 的完整安装流程尚未验证。安装时以 CAN 实际发布的安装包为准。
