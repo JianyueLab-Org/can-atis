@@ -12,10 +12,12 @@ if(APPLE)
     # Disable runtime linking to prevent issues with backends that are not actually implemented
     add_definitions(-DMA_NO_RUNTIME_LINKING)
 
-    # Set architectures to build fat library
-    # (skipped when cross-compiling with a toolchain file that sets a single architecture)
+    # macOS supports Apple Silicon only.
     if(NOT CMAKE_OSX_ARCHITECTURES)
-        set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
+        set(CMAKE_OSX_ARCHITECTURES "arm64")
+    endif()
+    if(NOT CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+        message(FATAL_ERROR "macOS builds support ARM64 (Apple Silicon) only")
     endif()
 
     # Set minimum macOS deployment target

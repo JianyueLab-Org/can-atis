@@ -40,7 +40,12 @@
 		</ContentWithTargetPath>
 	</ItemGroup>
 
-	<!-- Select the native library by target runtime so cross-compiling (e.g. publishing osx-* from Linux) picks the right one; fall back to the host OS when no RID is given. -->
+	<Target Name="ValidateMacOsArchitecture" BeforeTargets="PrepareForBuild"
+		Condition="$(RuntimeIdentifier.StartsWith('osx')) And '$(RuntimeIdentifier)' != 'osx-arm64'">
+		<Error Text="macOS builds support ARM64 (Apple Silicon) only. Use -r osx-arm64." />
+	</Target>
+
+	<!-- Select the native library by target runtime so cross-compiling (e.g. publishing osx-arm64 from Linux) picks the right one; fall back to the host OS when no RID is given. -->
 	<PropertyGroup>
 		<NativeAudioOs Condition="$(RuntimeIdentifier.StartsWith('win'))">win</NativeAudioOs>
 		<NativeAudioOs Condition="$(RuntimeIdentifier.StartsWith('linux'))">linux</NativeAudioOs>
