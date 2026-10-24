@@ -32,7 +32,6 @@ using CanAtis.Ui.Services;
 using CanAtis.Ui.Services.Websocket;
 using CanAtis.Utils;
 using CanAtis.Voice.WavPack;
-using Velopack.Locators;
 
 namespace CanAtis.Ui.ViewModels;
 
@@ -442,22 +441,12 @@ public class ProfileListViewModel : ReactiveViewModelBase, IDisposable
 
         try
         {
-            var currentRelease = VelopackLocator.Current.GetLocalPackages()
-                .FirstOrDefault(x => x.Version == VelopackLocator.Current.CurrentlyInstalledVersion);
-            if (currentRelease?.NotesMarkdown != null)
-            {
-                var releaseNotes = _windowFactory.CreateReleaseNotesDialog();
-                if (releaseNotes.ViewModel != null)
-                {
-                    releaseNotes.ViewModel.SuppressReleaseNotes = _appConfig.SuppressReleaseNotes;
-                    releaseNotes.ViewModel.ReleaseNotes = currentRelease.NotesMarkdown;
-                    if (await releaseNotes.ShowDialog<DialogResult>((Window)_dialogOwner) == DialogResult.Ok)
-                    {
-                        _appConfig.SuppressReleaseNotes = releaseNotes.ViewModel.SuppressReleaseNotes;
-                        _appConfig.SaveConfig();
-                    }
-                }
-            }
+            // Release notes are now shown via GitHub releases
+            await MessageBox.ShowDialog((Window)_dialogOwner,
+                "请访问 GitHub 发布页面查看更新说明：\nhttps://github.com/JianyueLab-Org/can-atis/releases",
+                "发布说明",
+                MessageBoxButton.Ok,
+                MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {

@@ -37,10 +37,11 @@ public class AppConfigurationProvider : IAppConfigurationProvider
     }
 
     /// <summary>
-    /// Gets the URL of the client update feed. The <c>VATIS_VERSION_URL</c> environment variable overrides the
+    /// Gets the URL of the client update endpoint. The URL expects query parameters: client=atis-for-can&version={current_version}
+    /// and returns JSON with update availability information. The <c>VATIS_VERSION_URL</c> environment variable overrides the
     /// configured value, which allows testing the update process against a local server.
     /// </summary>
-    public string VersionUrl => "https://ceruleanavi.net/api/v1/clients/latest?client=atis-for-can";
+    public string VersionUrl => "https://ceruleanavi.net/api/v1/clients/check-update";
 
     /// <inheritdoc />
     public string MetarUrl => "https://data.ceruleanavi.net/v1/data.json";

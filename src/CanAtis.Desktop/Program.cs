@@ -9,7 +9,6 @@ using System.Threading;
 using Avalonia;
 using Avalonia.ReactiveUI;
 using Serilog;
-using Velopack;
 
 namespace CanAtis;
 
@@ -18,11 +17,6 @@ namespace CanAtis;
 /// </summary>
 internal static class Program
 {
-    /// <summary>
-    /// Gets a value indicating whether the application has been updated, and the release notes should be displayed.
-    /// </summary>
-    public static bool IsUpdated { get; private set; }
-
     /// <summary>
     /// Main entry point for the application.
     /// </summary>
@@ -50,7 +44,6 @@ internal static class Program
                 return;
             }
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-            VelopackApp.Build().OnFirstRun(OnFirstRun).OnRestarted(OnRestarted).Run();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args, Avalonia.Controls.ShutdownMode.OnExplicitShutdown);
         }
         catch (Exception ex)
@@ -60,32 +53,6 @@ internal static class Program
         }
 
         Log.CloseAndFlush();
-    }
-
-    private static void OnRestarted(SemanticVersion version)
-    {
-        IsUpdated = true;
-    }
-
-    private static void OnFirstRun(SemanticVersion version)
-    {
-        if (!OperatingSystem.IsWindows())
-            return;
-
-        try
-        {
-            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var upgradeAssistantPath = Path.Combine(localAppData, "vatis-upgrade-assistant");
-            if (Directory.Exists(upgradeAssistantPath))
-            {
-                Directory.Delete(upgradeAssistantPath, recursive: true);
-                Log.Information("Deleted upgrade assistant directory: {UpgradeAssistantPath}", upgradeAssistantPath);
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Failed to delete upgrade assistant directory");
-        }
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.
