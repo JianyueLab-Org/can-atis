@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:CanAtis.Ui.ViewModels"
         xmlns:views="using:CanAtis.Ui.AtisConfiguration"
+        xmlns:platform="using:CanAtis.Ui.Platform"
         mc:Ignorable="d" d:DesignWidth="1050" d:DesignHeight="600"
         x:Class="CanAtis.Ui.Windows.AtisConfigurationWindow"
 		x:Name="Window"
@@ -18,9 +19,6 @@
         ShowInTaskbar="False"
         TransparencyLevelHint="Transparent"
 		CanResize="True"
-        PointerPressed="OnWindowPointerPressed"
-        PointerMoved="OnWindowPointerMoved"
-        PointerExited="OnWindowPointerExited"
         Title="通播配置"
         Foreground="#eee"
 		Icon="/Assets/MainIcon.ico">
@@ -58,6 +56,7 @@
 			</Setter>
 		</Style>
 	</Window.Styles>
+	<Panel>
 	<Border x:Name="TitleBar" CornerRadius="4" BorderBrush="{DynamicResource Brush.Border.Control}" BorderThickness="1" Background="{DynamicResource Brush.Bg.Panel}" ClipToBounds="True" PointerPressed="OnPointerPressed">
 		<Grid RowDefinitions="40,*" ColumnDefinitions="1*,1*" ClipToBounds="True">
 			<Grid x:Name="Overlay" Grid.RowSpan="2" Grid.ColumnSpan="2" ZIndex="100" IsVisible="{Binding ShowOverlay, DataType=vm:AtisConfigurationWindowViewModel, FallbackValue=False}">
@@ -124,6 +123,8 @@
 			</Border>
 		</Grid>
 	</Border>
+	<platform:ResizeGrips ZIndex="101" />
+	</Panel>
 	<Window.Styles>
 		<Style Selector="TabControl">
 			<Setter Property="Margin" Value="10,0,-10,0"/>

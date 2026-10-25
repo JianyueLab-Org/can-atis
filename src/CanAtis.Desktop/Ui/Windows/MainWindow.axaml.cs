@@ -40,6 +40,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         ViewModel = viewModel;
         ViewModel.Owner = this;
         RestorePositionBeforeShow();
+        CanAtis.Ui.Platform.NiriFloating.Apply(this);
 
         Opened += OnOpened;
         Closed += OnClosed;
@@ -156,9 +157,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
     private void OnPointerPressed(object sender, PointerPressedEventArgs e)
     {
-        if (TryBeginResizeDrag(e))
-            return;
-
         if (e.Source is Border or TextBlock && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             BeginMoveDrag(e);
