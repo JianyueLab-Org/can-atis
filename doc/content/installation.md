@@ -41,4 +41,19 @@ Windows 用户数据位于：
 
 ## 其他系统
 
-只有 CAN 正式发布对应安装包后，才按该包说明安装 macOS 或 Linux 版本。不要将原版的 `.app`、AppImage 下载地址当作 CAN 发行版。
+支持目标为 Linux x64 和 macOS Apple Silicon（ARM64）。Linux 使用通用版本，Arch Linux 不单独打包。当前自动发布流程仅提供 Windows 包；其他平台以实际发布的对应安装包为准。
+
+### 安装
+
+默认手动安装，无需安装脚本：
+
+- **Linux**：创建 `~/.local/bin/CAN/atis-for-can` 文件夹，将对应平台发布包的完整内容解压到其中，保留全部运行依赖。运行目录内的 `atis-for-can`；如果文件没有执行权限，可在文件属性中启用“允许作为程序执行”。
+- **macOS**：在用户应用程序目录创建 `~/Applications/CAN` 文件夹，将发布包中的 `ATIS for CAN.app` 拖入该文件夹，再从 Finder 打开。录音时按系统提示授予麦克风权限。
+
+更新时先退出客户端，再用新版本替换对应的程序文件夹或 `.app`。手动安装不会自动创建桌面入口，也不会写入 CAN Downloader 的安装记录。
+
+### 卸载与删除数据
+
+先退出客户端，然后手动删除 Linux 的 `~/.local/bin/CAN/atis-for-can` 文件夹，或将 macOS 的 `~/Applications/CAN/ATIS for CAN.app` 移到废纸篓。保留 CAN 文件夹中的其他软件。
+
+删除程序默认保留用户设置、配置和语音包。如果还需要清除这些数据，可先在客户端按 **Ctrl+Shift+O**（macOS 为 **Cmd+Shift+O**）打开数据目录，退出客户端后手动删除该 `ceruleanavi.atis-for-can` 目录。需要保留的配置和语音包应先备份。

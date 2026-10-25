@@ -105,12 +105,8 @@ public partial class AtisConfigurationWindow : ReactiveWindow<AtisConfigurationW
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (TryBeginResizeDrag(e))
-        {
-            return;
-        }
-
-        if (e.Source is Border { Name: "TitleBar" } && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        if (e.GetPosition(this).Y < 40 && e.Source is Border or TextBlock
+            && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             BeginMoveDrag(e);
         }

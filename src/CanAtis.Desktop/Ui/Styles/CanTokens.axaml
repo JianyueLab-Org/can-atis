@@ -1,7 +1,7 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!-- Adapted from JianyueLab-Org/can-client-ui, AtisClient/Styles/Theme/Tokens.axaml
-         revision ee728d7e775cb692c3d5f6dbf5fd14dd7e9acd0f (Avalonia 11 compatibility). -->
+         revision 7039d3fbfbbbe1d86f937e30ad43bb2335e339c9 (Avalonia 11 compatibility). -->
     <SolidColorBrush x:Key="Brush.Bg.App" Color="#141518" />
     <SolidColorBrush x:Key="Brush.Bg.Panel" Color="#1A1B1F" />
     <SolidColorBrush x:Key="Brush.Bg.Control" Color="#212328" />
@@ -21,7 +21,9 @@
     <SolidColorBrush x:Key="Brush.Danger" Color="#E5534B" />
     <SolidColorBrush x:Key="Brush.Info" Color="#5BC0D8" />
     <SolidColorBrush x:Key="Brush.Frequency" Color="#7CD49B" />
-    <FontFamily x:Key="Font.UI">Microsoft YaHei UI, PingFang SC, Noto Sans CJK SC, Segoe UI, sans-serif</FontFamily>
-    <FontFamily x:Key="Font.Mono">Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, Microsoft YaHei UI, monospace</FontFamily>
+    <FontFamily x:Key="Font.UI">Microsoft YaHei UI, PingFang SC, Noto Sans CJK SC, Noto Sans SC, Segoe UI, Helvetica Neue, sans-serif</FontFamily>
+    <FontFamily x:Key="Font.Mono">JetBrains Mono, Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, Microsoft YaHei UI, PingFang SC, monospace</FontFamily>
+    <StreamGeometry x:Key="Icon.Close">M0.7,0 L5,4.3 L9.3,0 L10,0.7 L5.7,5 L10,9.3 L9.3,10 L5,5.7 L0.7,10 L0,9.3 L4.3,5 L0,0.7 Z</StreamGeometry>
+    <StreamGeometry x:Key="Icon.Minimize">M0,4.5 L10,4.5 L10,5.5 L0,5.5 Z</StreamGeometry>
     <Color x:Key="SystemAccentColor">#4C8BF5</Color>
 </ResourceDictionary>

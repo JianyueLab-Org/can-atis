@@ -21,7 +21,7 @@ CAN.
 - Dark CAN-themed Avalonia UI
 - Local bundled airport data for first launch and offline configuration
 - Compact CAN client UI adapted from [can-client-ui](https://github.com/JianyueLab-Org/can-client-ui)
-  (`AtisClient`, revision `ee728d7e`), with Chinese navigation and shared dark design tokens
+  (`AtisClient`, revision `7039d3f`), with Chinese navigation and shared dark design tokens
 - Station navigation on the left or across the top; change **用户设置 → 席位列表放在顶部**
 - Native Windows audio backend built with MSVC
 
@@ -105,6 +105,28 @@ the bundled airport data, native audio initialization, and voice worker startup.
 When running from source there is no embedded worker. Point `CAN_VOICE_WORKER`
 at can-audio's `atis-worker/can_mumble_worker.py` (and `CAN_PYTHON` at a Python
 with can-audio's `requirements-voice.txt`), or at a built `can-voice-worker.exe`.
+
+### Linux and macOS UI
+
+The production UI adapts can-client-ui's Linux/macOS update (`7039d3f`) to
+Avalonia 11 and the existing ReactiveUI view models. It includes cross-platform
+Chinese/symbol font fallbacks, vector window icons, and borderless resize handles
+in the main and ATIS configuration windows. macOS uses pointer-driven resizing;
+Linux delegates resizing to X11/XWayland. Linux uses `can-atis-client` as its
+WM_CLASS and disables X session management. Under niri, the main window opens
+floating and then restores resizing after activation (or a three-second fallback).
+
+Linux requires fontconfig, ICU and a Chinese font such as Noto Sans CJK SC.
+Wayland sessions need XWayland; niri needs xwayland-satellite. macOS targets
+Apple Silicon (`osx-arm64`); Linux uses the common `linux-x64` target.
+
+Installation is manual: extract the complete Linux package into
+`~/.local/bin/CAN/atis-for-can`, or place the macOS `.app` in
+`~/Applications/CAN`. Keep all bundled dependencies together. Close the client
+before replacing its files for an update. To uninstall, delete only its application
+folder or `.app`; user settings, profiles and voice packs remain unless separately
+deleted. Manual installation does not register the client with CAN Downloader.
+See [installation instructions](doc/content/installation.md).
 
 ### Releases
 

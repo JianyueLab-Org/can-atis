@@ -8,6 +8,7 @@ using System.IO;
 using System.Threading;
 using Avalonia;
 using Avalonia.ReactiveUI;
+using Avalonia.Media;
 using Serilog;
 using Velopack;
 
@@ -92,6 +93,25 @@ internal static class Program
     private static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+            .With(new X11PlatformOptions { WmClass = "can-atis-client", EnableSessionManagement = false })
+            .With(new FontManagerOptions
+            {
+                FontFallbacks =
+                [
+                    new() { FontFamily = new FontFamily("Microsoft YaHei UI") },
+                    new() { FontFamily = new FontFamily("PingFang SC") },
+                    new() { FontFamily = new FontFamily("Hiragino Sans GB") },
+                    new() { FontFamily = new FontFamily("Noto Sans CJK SC") },
+                    new() { FontFamily = new FontFamily("Noto Sans SC") },
+                    new() { FontFamily = new FontFamily("Source Han Sans SC") },
+                    new() { FontFamily = new FontFamily("WenQuanYi Micro Hei") },
+                    new() { FontFamily = new FontFamily("Segoe UI Symbol") },
+                    new() { FontFamily = new FontFamily("Apple Symbols") },
+                    new() { FontFamily = new FontFamily("DejaVu Sans") },
+                    new() { FontFamily = new FontFamily("Noto Sans Symbols 2") },
+                    new() { FontFamily = new FontFamily("Noto Sans Symbols") },
+                ]
+            })
             .UseReactiveUI()
             .LogToTrace();
 }
