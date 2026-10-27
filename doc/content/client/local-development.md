@@ -38,13 +38,13 @@ dotnet test src/CanAtis.Desktop.Tests/CanAtis.Desktop.Tests.csproj
 发行版把它打成 `can-voice-worker.exe` 嵌在 `atis-for-can.exe` 里。从源码运行时没有嵌入的进程，需要用环境变量指过去：
 
 ```powershell
-git clone -b new-client-sys https://github.com/JianyueLab-Org/can-audio.git ..\can-audio
-py -3.12 -m venv ..\can-audio\.venv
+git clone -b new-client-sys https://github.com/JianyueLab-Org/can-audio.git ..\..\fsd\can-audio
+py -3.12 -m venv ..\..\fsd\can-audio\.venv
 $env:PYTHONUTF8 = 1
-..\can-audio\.venv\Scripts\python.exe -m pip install -r ..\can-audio\requirements-voice.txt
+..\..\fsd\can-audio\.venv\Scripts\python.exe -m pip install -r ..\..\fsd\can-audio\requirements-voice.txt
 
-$env:CAN_VOICE_WORKER = (Resolve-Path ..\can-audio\atis-worker\can_mumble_worker.py)
-$env:CAN_PYTHON = (Resolve-Path ..\can-audio\.venv\Scripts\python.exe)
+$env:CAN_VOICE_WORKER = (Resolve-Path ..\..\fsd\can-audio\atis-worker\can_mumble_worker.py)
+$env:CAN_PYTHON = (Resolve-Path ..\..\fsd\can-audio\.venv\Scripts\python.exe)
 dotnet run --project src/CanAtis.Desktop/CanAtis.Desktop.csproj
 ```
 
@@ -53,8 +53,8 @@ dotnet run --project src/CanAtis.Desktop/CanAtis.Desktop.csproj
 ## 发布 Windows x64
 
 ```powershell
-..\can-audio\.venv\Scripts\python.exe -m pip install -r ..\can-audio\requirements-build.txt
-.\build-single-file.ps1 -Python ..\can-audio\.venv\Scripts\python.exe -CanAudio ..\can-audio
+..\..\fsd\can-audio\.venv\Scripts\python.exe -m pip install -r ..\..\fsd\can-audio\requirements-build.txt
+.\build-single-file.ps1 -Python ..\..\fsd\can-audio\.venv\Scripts\python.exe -CanAudio ..\..\fsd\can-audio
 ```
 
 不给 `-CanAudio` 时脚本会把 can-audio 的 `new-client-sys` 分支克隆到 `build\can-audio`。脚本依次跑 can-audio 的 atis-worker 测试、用 PyInstaller 打包语音进程并自检、`dotnet publish` 单文件，最后运行 `atis-for-can.exe --self-test`。产物在 `release\can-atis-single-file\atis-for-can.exe`，同目录的 `can-audio-commit.txt` 记录了用的是 can-audio 的哪个提交。

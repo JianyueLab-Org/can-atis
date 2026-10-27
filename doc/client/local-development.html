@@ -42,19 +42,19 @@ dotnet test src/CanAtis.Desktop.Tests/CanAtis.Desktop.Tests.csproj
 <h2 id="_5">语音发送进程</h2>
 <p>网络播音由一个 Python 进程完成：它连上 Mumble、进入频率频道并循环播报客户端合成好的音频。这部分<strong>不在本仓库</strong>，由 C# 与 Python 开发共同维护在 can-audio 仓库 <code>new-client-sys</code> 分支的 <a href="https://github.com/JianyueLab-Org/can-audio/tree/new-client-sys/atis-worker"><code>atis-worker/</code></a> 目录，命令行参数、输入输出和退出码见那里的 README。</p>
 <p>发行版把它打成 <code>can-voice-worker.exe</code> 嵌在 <code>atis-for-can.exe</code> 里。从源码运行时没有嵌入的进程，需要用环境变量指过去：</p>
-<pre><code class="language-powershell">git clone -b new-client-sys https://github.com/JianyueLab-Org/can-audio.git ..\can-audio
-py -3.12 -m venv ..\can-audio\.venv
+<pre><code class="language-powershell">git clone -b new-client-sys https://github.com/JianyueLab-Org/can-audio.git ..\..\fsd\can-audio
+py -3.12 -m venv ..\..\fsd\can-audio\.venv
 $env:PYTHONUTF8 = 1
-..\can-audio\.venv\Scripts\python.exe -m pip install -r ..\can-audio\requirements-voice.txt
+..\..\fsd\can-audio\.venv\Scripts\python.exe -m pip install -r ..\..\fsd\can-audio\requirements-voice.txt
 
-$env:CAN_VOICE_WORKER = (Resolve-Path ..\can-audio\atis-worker\can_mumble_worker.py)
-$env:CAN_PYTHON = (Resolve-Path ..\can-audio\.venv\Scripts\python.exe)
+$env:CAN_VOICE_WORKER = (Resolve-Path ..\..\fsd\can-audio\atis-worker\can_mumble_worker.py)
+$env:CAN_PYTHON = (Resolve-Path ..\..\fsd\can-audio\.venv\Scripts\python.exe)
 dotnet run --project src/CanAtis.Desktop/CanAtis.Desktop.csproj
 </code></pre>
 <p><code>CAN_VOICE_WORKER</code> 也可以指向打包好的 <code>can-voice-worker.exe</code>，这时不需要 <code>CAN_PYTHON</code>。两个都不设时，开始播报会报“CAN Mumble worker is missing”。</p>
 <h2 id="windows-x64">发布 Windows x64</h2>
-<pre><code class="language-powershell">..\can-audio\.venv\Scripts\python.exe -m pip install -r ..\can-audio\requirements-build.txt
-.\build-single-file.ps1 -Python ..\can-audio\.venv\Scripts\python.exe -CanAudio ..\can-audio
+<pre><code class="language-powershell">..\..\fsd\can-audio\.venv\Scripts\python.exe -m pip install -r ..\..\fsd\can-audio\requirements-build.txt
+.\build-single-file.ps1 -Python ..\..\fsd\can-audio\.venv\Scripts\python.exe -CanAudio ..\..\fsd\can-audio
 </code></pre>
 <p>不给 <code>-CanAudio</code> 时脚本会把 can-audio 的 <code>new-client-sys</code> 分支克隆到 <code>build\can-audio</code>。脚本依次跑 can-audio 的 atis-worker 测试、用 PyInstaller 打包语音进程并自检、<code>dotnet publish</code> 单文件，最后运行 <code>atis-for-can.exe --self-test</code>。产物在 <code>release\can-atis-single-file\atis-for-can.exe</code>，同目录的 <code>can-audio-commit.txt</code> 记录了用的是 can-audio 的哪个提交。</p>
 <p>正式发布由 GitHub Actions（<code>.github/workflows/release.yml</code>）完成：推到 <code>main</code> 就从 can-audio 拉最新的语音发送进程打包，补丁号按已有的 <code>v1.0.*</code> 标签自动加一，打标签并发 Release。主版本和次版本写在 <code>CanAtis.Desktop.csproj</code> 的 <code>&lt;Version&gt;</code> 里，改系列时要和工作流的 <code>SERIES</code> 一起改。</p>
