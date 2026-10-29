@@ -5,51 +5,32 @@
 
 using System;
 using System.Diagnostics;
+using System.Net.Http;
+using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using CanAtis.Config;
 using CanAtis.Events;
 using CanAtis.Events.EventBus;
-using Velopack;
 
 namespace CanAtis.Updates;
 
 /// <summary>
-/// Provides functionality for updating the client application.
+/// Provides functionality for checking application updates.
 /// </summary>
 public class ClientUpdater : IClientUpdater
 {
-    private readonly UpdateManager _updateManager;
-    private UpdateInfo? _updateInfo;
+    private readonly HttpClient _httpClient;
+    private readonly string _updateCheckUrl;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ClientUpdater"/> class.
     /// </summary>
     /// <param name="appConfigurationProvider">The application configuration provider.</param>
-    /// <exception cref="PlatformNotSupportedException">Thrown when the current platform is not supported.</exception>
     public ClientUpdater(IAppConfigurationProvider appConfigurationProvider)
     {
-        var versionUrl = appConfigurationProvider.VersionUrl;
-        if (OperatingSystem.IsMacOS())
-        {
-            versionUrl += "/macos/";
-        }
-        else if (OperatingSystem.IsLinux())
-        {
-            versionUrl += "/linux/";
-        }
-        else if (OperatingSystem.IsWindows())
-        {
-            versionUrl += "/windows/";
-        }
-        else
-        {
-            throw new PlatformNotSupportedException();
-        }
-
-        _updateManager = new UpdateManager(versionUrl, new UpdateOptions
-        {
-            AllowVersionDowngrade = true
-        });
+        _httpClient = new HttpClient();
+        _updateCheckUrl = BuildUpdateCheckUrl(appConfigurationProvider.VersionUrl);
     }
 
     /// <inheritdoc />
@@ -60,18 +41,64 @@ public class ClientUpdater : IClientUpdater
         if (Debugger.IsAttached)
             return false;
 
-        if (!_updateManager.IsInstalled) return false;
-        _updateInfo = await _updateManager.CheckForUpdatesAsync();
+        try
+        {
+            var response = await _httpClient.GetStringAsync(_updateCheckUrl);
+            var updateInfo = JsonSerializer.Deserialize<UpdateResponse>(response);
 
-        if (_updateInfo == null) return false;
-        await _updateManager.DownloadUpdatesAsync(_updateInfo, ReportProgress);
-        _updateManager.WaitExitThenApplyUpdates(_updateInfo, silent: true);
+            if (updateInfo?.Update?.Available == true)
+            {
+                EventBus.Instance.Publish(new StartupStatusChanged(
+                    $"New version available: {updateInfo.Update.Version}"));
+                // TODO: Notify user about available update
+                // For now, just log and continue - don't block startup
+            }
+        }
+        catch (Exception ex)
+        {
+            // Silently fail update check - don't block startup
+            Debug.WriteLine($"Update check failed: {ex.Message}");
+        }
 
-        return true;
+        return false; // Never trigger restart, only notify
     }
 
-    private static void ReportProgress(int progress)
+    /// <summary>
+    /// Builds the update check URL with version and platform parameters.
+    /// </summary>
+    /// <param name="baseUrl">The base URL from configuration.</param>
+    /// <returns>The complete URL with query parameters.</returns>
+    internal static string BuildUpdateCheckUrl(string baseUrl)
     {
-        EventBus.Instance.Publish(new StartupStatusChanged($"Downloading new version: {progress}%"));
+        var version = Assembly.GetExecutingAssembly()
+            .GetName()
+            .Version?
+            .ToString(3) ?? "0.0.0";
+
+        var uriBuilder = new UriBuilder(baseUrl);
+        var query = System.Web.HttpUtility.ParseQueryString(uriBuilder.Query);
+        query["version"] = version;
+
+        if (OperatingSystem.IsWindows())
+            query["platform"] = "windows";
+        else if (OperatingSystem.IsMacOS())
+            query["platform"] = "macos";
+        else if (OperatingSystem.IsLinux())
+            query["platform"] = "linux";
+
+        uriBuilder.Query = query.ToString();
+        return uriBuilder.ToString();
+    }
+
+    private sealed class UpdateResponse
+    {
+        public UpdateInfo? Update { get; set; }
+    }
+
+    private sealed class UpdateInfo
+    {
+        public bool Available { get; set; }
+
+        public string? Version { get; set; }
     }
 }

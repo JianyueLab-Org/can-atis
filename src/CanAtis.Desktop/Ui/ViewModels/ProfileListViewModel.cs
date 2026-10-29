@@ -32,7 +32,6 @@ using CanAtis.Ui.Services;
 using CanAtis.Ui.Services.Websocket;
 using CanAtis.Utils;
 using CanAtis.Voice.WavPack;
-using Velopack.Locators;
 
 namespace CanAtis.Ui.ViewModels;
 
@@ -92,7 +91,6 @@ public class ProfileListViewModel : ReactiveViewModelBase, IDisposable
         DeleteProfileCommand = ReactiveCommand.CreateFromTask<ProfileViewModel>(HandleDeleteProfile, canExecute);
         StartClientSessionCommand = ReactiveCommand.Create<ProfileViewModel>(HandleStartSession, canExecute);
         ExitCommand = ReactiveCommand.Create(HandleExit);
-        OpenReleaseNotesCommand = ReactiveCommand.CreateFromTask(HandleOpenReleaseNotes);
 
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime)
         {
@@ -148,11 +146,6 @@ public class ProfileListViewModel : ReactiveViewModelBase, IDisposable
     /// Gets the command that handles application exit functionality.
     /// </summary>
     public ReactiveCommand<Unit, Unit> ExitCommand { get; }
-
-    /// <summary>
-    /// Gets the command that opens the release notes for the installed version.
-    /// </summary>
-    public ReactiveCommand<Unit, Unit> OpenReleaseNotesCommand { get; }
 
     /// <summary>
     /// Gets or sets the collection of profiles.
@@ -226,7 +219,6 @@ public class ProfileListViewModel : ReactiveViewModelBase, IDisposable
         ExportProfileCommand.Dispose();
         StartClientSessionCommand.Dispose();
         ExitCommand.Dispose();
-        OpenReleaseNotesCommand.Dispose();
 
         _websocketService.ChangeProfileReceived -= OnChangeProfileReceived;
 
@@ -432,36 +424,6 @@ public class ProfileListViewModel : ReactiveViewModelBase, IDisposable
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             Dispatcher.UIThread.Invoke(() => desktop.Shutdown());
-        }
-    }
-
-    private async Task HandleOpenReleaseNotes()
-    {
-        if (_dialogOwner == null)
-            return;
-
-        try
-        {
-            var currentRelease = VelopackLocator.Current.GetLocalPackages()
-                .FirstOrDefault(x => x.Version == VelopackLocator.Current.CurrentlyInstalledVersion);
-            if (currentRelease?.NotesMarkdown != null)
-            {
-                var releaseNotes = _windowFactory.CreateReleaseNotesDialog();
-                if (releaseNotes.ViewModel != null)
-                {
-                    releaseNotes.ViewModel.SuppressReleaseNotes = _appConfig.SuppressReleaseNotes;
-                    releaseNotes.ViewModel.ReleaseNotes = currentRelease.NotesMarkdown;
-                    if (await releaseNotes.ShowDialog<DialogResult>((Window)_dialogOwner) == DialogResult.Ok)
-                    {
-                        _appConfig.SuppressReleaseNotes = releaseNotes.ViewModel.SuppressReleaseNotes;
-                        _appConfig.SaveConfig();
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error showing release notes.");
         }
     }
 

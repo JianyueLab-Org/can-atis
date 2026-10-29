@@ -37,7 +37,6 @@ using CanAtis.Ui.Startup;
 using CanAtis.Ui.ViewModels;
 using CanAtis.Updates;
 using CanAtis.Voice.Audio;
-using Velopack.Locators;
 
 namespace CanAtis;
 
@@ -189,33 +188,6 @@ public class App : Application
 
                 await profileUpdatesTask;
                 await voicesTask;
-
-                // Show release notes of new version
-                if (Program.IsUpdated && !appConfig.SuppressReleaseNotes)
-                {
-                    try
-                    {
-                        var currentRelease = VelopackLocator.Current.GetLocalPackages()
-                            .FirstOrDefault(x => x.Version == VelopackLocator.Current.CurrentlyInstalledVersion);
-                        if (currentRelease?.NotesMarkdown != null)
-                        {
-                            var releaseNotes = _serviceProvider.GetService<ReleaseNotesDialog>();
-                            if (releaseNotes.ViewModel != null)
-                            {
-                                releaseNotes.ViewModel.ReleaseNotes = currentRelease.NotesMarkdown;
-                                if (await releaseNotes.ShowDialog<DialogResult>(_startupWindow) == DialogResult.Ok)
-                                {
-                                    appConfig.SuppressReleaseNotes = releaseNotes.ViewModel.SuppressReleaseNotes;
-                                    appConfig.SaveConfig();
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error showing release notes.");
-                    }
-                }
 
                 _startupWindow.Close();
 

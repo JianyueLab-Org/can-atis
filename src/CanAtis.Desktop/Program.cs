@@ -10,7 +10,6 @@ using Avalonia;
 using Avalonia.ReactiveUI;
 using Avalonia.Media;
 using Serilog;
-using Velopack;
 
 namespace CanAtis;
 
@@ -19,11 +18,6 @@ namespace CanAtis;
 /// </summary>
 internal static class Program
 {
-    /// <summary>
-    /// Gets a value indicating whether the application has been updated, and the release notes should be displayed.
-    /// </summary>
-    public static bool IsUpdated { get; private set; }
-
     /// <summary>
     /// Main entry point for the application.
     /// </summary>
@@ -50,8 +44,9 @@ internal static class Program
                     throw new InvalidOperationException("Voice worker self-test failed");
                 return;
             }
+
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-            VelopackApp.Build().OnFirstRun(OnFirstRun).OnRestarted(OnRestarted).Run();
+            OnFirstRun();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args, Avalonia.Controls.ShutdownMode.OnExplicitShutdown);
         }
         catch (Exception ex)
@@ -63,12 +58,7 @@ internal static class Program
         Log.CloseAndFlush();
     }
 
-    private static void OnRestarted(SemanticVersion version)
-    {
-        IsUpdated = true;
-    }
-
-    private static void OnFirstRun(SemanticVersion version)
+    private static void OnFirstRun()
     {
         if (!OperatingSystem.IsWindows())
             return;
