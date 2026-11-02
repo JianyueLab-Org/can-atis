@@ -57,7 +57,8 @@ dotnet run --project src/CanAtis.Desktop/CanAtis.Desktop.csproj
 .\build-single-file.ps1 -Python ..\..\fsd\can-audio\.venv\Scripts\python.exe -CanAudio ..\..\fsd\can-audio
 </code></pre>
 <p>不给 <code>-CanAudio</code> 时脚本会把 can-audio 的 <code>new-client-sys</code> 分支克隆到 <code>build\can-audio</code>。脚本依次跑 can-audio 的 atis-worker 测试、用 PyInstaller 打包语音进程并自检、<code>dotnet publish</code> 单文件，最后运行 <code>atis-for-can.exe --self-test</code>。产物在 <code>release\can-atis-single-file\atis-for-can.exe</code>，同目录的 <code>can-audio-commit.txt</code> 记录了用的是 can-audio 的哪个提交。</p>
-<p>正式发布由 GitHub Actions（<code>.github/workflows/release.yml</code>）完成：推到 <code>main</code> 就从 can-audio 拉最新的语音发送进程打包，补丁号按已有的 <code>v1.0.*</code> 标签自动加一，打标签并发 Release。主版本和次版本写在 <code>CanAtis.Desktop.csproj</code> 的 <code>&lt;Version&gt;</code> 里，改系列时要和工作流的 <code>SERIES</code> 一起改。</p>
+<p>脚本同时生成 <code>release\atis-for-can-&lt;version&gt;-win-x64.zip</code>，包含完整发布目录，根目录保留 <code>atis-for-can.exe</code> 和 <code>can-audio-commit.txt</code>。Release 的 <code>SHA256SUMS</code> 校验此 ZIP；下载后先核对 ZIP 的 SHA-256，再完整解压并运行 <code>atis-for-can.exe</code>。</p>
+<p>正式发布由 GitHub Actions（<code>.github/workflows/release.yml</code>）完成：推到 <code>main</code> 就从 can-audio 拉最新的语音发送进程打包，补丁号按已有的 <code>v3.0.*</code> 标签自动加一，打标签并发布 ZIP 和 <code>SHA256SUMS</code>。主版本和次版本写在 <code>CanAtis.Desktop.csproj</code> 的 <code>&lt;Version&gt;</code> 里，改系列时要和工作流的 <code>SERIES</code> 一起改。</p>
 <h2 id="_6">服务对接</h2>
 <p>FSD / Mumble / 数据端点见<a href="../index.html">首页</a>。TTS 可通过 <code>CAN_TTS_URL</code>、<code>CAN_TTS_VOICES_URL</code> 和运行环境的 <code>CAN_TTS_JWT</code> 进行接口测试，但公共 CAN 服务尚需部署。</p>
 <p>配置与代码中只使用占位符，不内置维护者账号或令牌。原版 vATIS 的 Mock FSD / DevServer 流程需要显式移植和配置，当前仓库中残留的 Mock 类型不表示已提供完整本地开发服务。</p>

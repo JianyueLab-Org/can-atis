@@ -77,7 +77,6 @@ namespace CanAtis.Container;
 [Transient(typeof(SortPresetsDialog))]
 [Transient(typeof(SortAtisStationsDialog))]
 [Transient(typeof(VoicePacksDialog))]
-[Transient(typeof(ReleaseNotesDialog))]
 
 // ViewModels
 [Transient(typeof(ProfileListViewModel))]
@@ -104,7 +103,6 @@ namespace CanAtis.Container;
 [Transient(typeof(DatisReplacementsViewModel))]
 [Transient(typeof(SortAtisStationsDialogViewModel))]
 [Transient(typeof(VoicePacksDialogViewModel))]
-[Transient(typeof(ReleaseNotesDialogViewModel))]
 internal sealed partial class ServiceProvider
 {
     /// <summary>

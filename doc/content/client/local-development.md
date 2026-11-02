@@ -59,7 +59,9 @@ dotnet run --project src/CanAtis.Desktop/CanAtis.Desktop.csproj
 
 不给 `-CanAudio` 时脚本会把 can-audio 的 `new-client-sys` 分支克隆到 `build\can-audio`。脚本依次跑 can-audio 的 atis-worker 测试、用 PyInstaller 打包语音进程并自检、`dotnet publish` 单文件，最后运行 `atis-for-can.exe --self-test`。产物在 `release\can-atis-single-file\atis-for-can.exe`，同目录的 `can-audio-commit.txt` 记录了用的是 can-audio 的哪个提交。
 
-正式发布由 GitHub Actions（`.github/workflows/release.yml`）完成：推到 `main` 就从 can-audio 拉最新的语音发送进程打包，补丁号按已有的 `v1.0.*` 标签自动加一，打标签并发 Release。主版本和次版本写在 `CanAtis.Desktop.csproj` 的 `<Version>` 里，改系列时要和工作流的 `SERIES` 一起改。
+脚本同时生成 `release\atis-for-can-<version>-win-x64.zip`，包含完整发布目录，根目录保留 `atis-for-can.exe` 和 `can-audio-commit.txt`。Release 的 `SHA256SUMS` 校验此 ZIP；下载后先核对 ZIP 的 SHA-256，再完整解压并运行 `atis-for-can.exe`。
+
+正式发布由 GitHub Actions（`.github/workflows/release.yml`）完成：推到 `main` 就从 can-audio 拉最新的语音发送进程打包，补丁号按已有的 `v3.0.*` 标签自动加一，打标签并发布 ZIP 和 `SHA256SUMS`。主版本和次版本写在 `CanAtis.Desktop.csproj` 的 `<Version>` 里，改系列时要和工作流的 `SERIES` 一起改。
 
 ## 服务对接
 

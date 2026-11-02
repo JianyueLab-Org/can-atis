@@ -77,9 +77,6 @@ public class AppConfig : IAppConfig
     public bool AutoFetchDatis { get; set; }
 
     /// <inheritdoc />
-    public bool SuppressReleaseNotes { get; set; }
-
-    /// <inheritdoc />
     [JsonIgnore]
     public string PasswordDecrypted
     {
@@ -124,7 +121,6 @@ public class AppConfig : IAppConfig
             PlaybackDevice = config.PlaybackDevice;
             AutoFetchDatis = config.AutoFetchDatis;
             AutoFetchAtisLetter = config.AutoFetchAtisLetter || AutoFetchDatis;
-            SuppressReleaseNotes = config.SuppressReleaseNotes;
         }
 
         SaveConfig();

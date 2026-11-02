@@ -8,17 +8,13 @@ using System.Threading.Tasks;
 namespace CanAtis.Updates;
 
 /// <summary>
-/// Represents an interface for updating a client.
-/// This interface defines the contract for initiating and managing client update processes.
+/// Checks for a newer client release.
 /// </summary>
 public interface IClientUpdater
 {
     /// <summary>
-    /// Executes the update process for the client.
+    /// Checks release metadata without installing an update.
     /// </summary>
-    /// <returns>
-    /// A task that represents the asynchronous operation. The task result is a boolean
-    /// value indicating whether the update process was successfully executed.
-    /// </returns>
-    public Task<bool> Run();
+    /// <returns>The available update, or null when current or unavailable.</returns>
+    public Task<ClientUpdate?> Run();
 }

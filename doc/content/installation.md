@@ -2,14 +2,16 @@
 
 ## 获取客户端
 
-从 [GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases) 下载最新版 **ATIS for CAN**，或使用 CAN 管理员公布的发布渠道。请确认程序名为 `atis-for-can.exe`。原版 vATIS 的下载按钮安装的是原版客户端，不是 CAN 版。
+从 [GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases) 下载最新版 **ATIS for CAN** 的 `atis-for-can-<version>-win-x64.zip`，或使用 CAN 管理员公布的发布渠道。解压后的程序名为 `atis-for-can.exe`。原版 vATIS 的下载按钮安装的是原版客户端，不是 CAN 版。
+
+已发布的 3.0.4 仅提供单独的 EXE，尚无 ZIP。以下压缩包安装说明适用于后续 ZIP 发布。CAN API 仅在对应版本 ZIP 发布后提供 ATIS 更新与下载。ZIP 发布与 API 资源映射须协调上线；先发布 ZIP 再切换映射可避免临时 503 响应。
 
 ## Windows 安装
 
-### 单文件版本
+### 便携压缩包
 
-1. 下载适用于 Windows x64 的 `atis-for-can.exe`。可以用同一 Release 里的 `SHA256SUMS` 核对文件。
-2. 放到有写入权限的目录，双击运行。日志写在程序旁边的 `Logs` 文件夹。需要时可自行创建桌面快捷方式。
+1. 下载适用于 Windows x64 的 `atis-for-can-<version>-win-x64.zip` 和同一 Release 里的 `SHA256SUMS`，核对 ZIP 文件的 SHA-256。
+2. 将 ZIP 完整解压到有写入权限的目录，双击其中的 `atis-for-can.exe` 运行。日志写在程序旁边的 `Logs` 文件夹。需要时可自行创建桌面快捷方式。
 
 `atis-for-can.exe` 已内置 .NET 运行时、原生音频库、机场数据，以及打包好的语音发送进程（含 Mumble 依赖和 Opus），无需另装 .NET 或 Python；首次运行会自动解压必要的运行组件。安装目录可以由用户选择，不沿用原版“必须安装在 org.vatsim.vatis”这一说明。
 
@@ -35,7 +37,7 @@ Windows 用户数据位于：
 
 ## 更新客户端
 
-源码保留了自动更新机制，但它只在兼容的安装包和更新源有效时工作。当前 CAN 更新源的服务端格式尚需与 Velopack 配套验证，因此不能保证每种包都会自动更新。
+客户端启动时通过 CAN API 检查新版本，便携包和单文件版本均可使用。仅在服务端确认有更高版本时提示；确认后打开 CAN 下载中转链接，不会自动下载、安装、重启或降级。检查失败不影响启动。
 
 压缩包用户可先退出程序、备份数据目录，再按照发布说明替换完整程序目录。**客户端更新**与[配置文件自动更新](client/automatic-profile-updates.md)是不同机制。
 

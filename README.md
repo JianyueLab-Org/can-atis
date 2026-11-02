@@ -1,7 +1,9 @@
 # ATIS for CAN
 
-The current stable release is **3.0.1**, the latest official release of the C#
-desktop client. Download the Windows x64 single-file executable from [GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases).
+The current stable release is **3.0.4**, the latest official release of the C#
+desktop client. Download it from [GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases).
+That release provides a bare executable, not a ZIP. The updated Windows workflow
+produces a portable ZIP; extract it and run `atis-for-can.exe`.
 
 ATIS for CAN is the ATIS desktop client for the **Cerulean Aviation Network**.
 It is based on the ATIS workflow and editor from the original project, but its
@@ -96,11 +98,13 @@ with PyInstaller as `can-voice-worker.exe`, publishes the single-file client,
 and runs `atis-for-can.exe --self-test`.
 
 Output: `release/can-atis-single-file/atis-for-can.exe`, plus
-`can-audio-commit.txt` naming the can-audio commit that was used. The executable
-embeds the .NET runtime, native audio, airport data, and the frozen voice worker
-(including pymumble-udp and Opus). Only the executable needs to be distributed;
-runtime files are extracted automatically. `atis-for-can.exe --self-test` checks
-the bundled airport data, native audio initialization, and voice worker startup.
+`can-audio-commit.txt` naming the can-audio commit that was used.
+`release/atis-for-can-<version>-win-x64.zip` contains that directory's files at
+the archive root. The executable name remains `atis-for-can.exe`.
+The executable embeds the .NET runtime, native audio, airport data, and the frozen
+voice worker (including pymumble-udp and Opus). Runtime files are extracted
+automatically. `atis-for-can.exe --self-test` checks the bundled airport data,
+native audio initialization, and voice worker startup.
 
 When running from source there is no embedded worker. Point `CAN_VOICE_WORKER`
 at can-audio's `atis-worker/can_mumble_worker.py` (and `CAN_PYTHON` at a Python
@@ -133,11 +137,35 @@ See [installation instructions](doc/content/installation.md).
 `.github/workflows/release.yml` builds and releases on every push to `main`,
 following can-audio's release workflow: the patch number is the highest existing
 `v3.0.*` tag plus one (the first release is `v3.0.0`), the workflow tags the
-commit and publishes `atis-for-can.exe` with a `SHA256SUMS` file. The major and
-minor version live in `<Version>` in `CanAtis.Desktop.csproj`; change it together
+commit and publishes `atis-for-can-<version>-win-x64.zip` with a `SHA256SUMS`
+file hashing the ZIP. GitHub's asset SHA-256 digest is used by the CAN API relay.
+The major and minor version live in `<Version>` in `CanAtis.Desktop.csproj`; change it together
 with `SERIES` in the workflow. Release notes in `doc/releases/v<version>.md` are
 added to the release when present. A manual run (`workflow_dispatch`) only
 uploads the build as an Actions artifact.
+
+The CAN API provides ATIS updates and downloads only after the matching versioned
+ZIP is published. Coordinate the ZIP release and API mapping rollout; publishing
+the ZIP before switching the mapping avoids a temporary 503 response.
+Release 3.0.4 does not provide the ZIP required by that mapping.
+
+At startup, portable and single-file clients check the CAN API JSON endpoint
+`https://ceruleanavi.net/api/v1/clients/latest?client=atis-for-can&version=<current>`.
+Only `update.available: true` with a newer version prompts the user. Accepting
+opens `https://api.ceruleanavi.net/api/v1/clients/download/atis-for-can?v=<version>`.
+The client does not download, install, restart, or downgrade itself.
+Unavailable update checks do not block startup. Close the client before
+replacing its files. Clicking the version opens that version's GitHub release notes.
+
+Updater loopback smoke (no credentials or public service requests):
+
+```powershell
+dotnet test src/CanAtis.Desktop.Tests/CanAtis.Desktop.Tests.csproj --filter FullyQualifiedName~ClientUpdaterTests
+```
+
+The checks use a local TCP HTTP server and the production downloader. They cover
+portable checks, the request query, relay links, no update, stale/downgrade
+offers, malformed responses, and unavailable service responses.
 
 Login uses the member's CAN ID, name and network password. No controller rating
 selection is required; the FSD connection advertises the ATIS facility and the

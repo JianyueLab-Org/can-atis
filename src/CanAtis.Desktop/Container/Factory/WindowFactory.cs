@@ -234,15 +234,4 @@ internal class WindowFactory : IWindowFactory
         var viewModel = scope.GetService<VoicePacksDialogViewModel>();
         return new VoicePacksDialog(viewModel);
     }
-
-    /// <summary>
-    /// Creates and initializes a new instance of the <see cref="ReleaseNotesDialog"/> class.
-    /// </summary>
-    /// <returns>An instance of the <see cref="ReleaseNotesDialog"/> class.</returns>
-    public ReleaseNotesDialog CreateReleaseNotesDialog()
-    {
-        var scope = _provider.CreateScope();
-        var viewModel = scope.GetService<ReleaseNotesDialogViewModel>();
-        return new ReleaseNotesDialog(viewModel);
-    }
 }

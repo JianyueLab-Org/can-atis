@@ -138,7 +138,7 @@ jobs:
         with:
           name: atis-for-can
           path: |
-            release/can-atis-single-file/atis-for-can.exe
+            release/atis-for-can-${{ needs.version.outputs.number }}-win-x64.zip
             release/can-atis-single-file/can-audio-commit.txt
           if-no-files-found: error
 
@@ -161,13 +161,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          (cd packages && sha256sum atis-for-can.exe > SHA256SUMS)
-          commit=$(tr -d '\r\n' < packages/can-audio-commit.txt)
+          (cd packages && sha256sum "atis-for-can-${{ needs.version.outputs.number }}-win-x64.zip" > SHA256SUMS)
+          commit=$(tr -d '\r\n' < packages/can-atis-single-file/can-audio-commit.txt)
           notes="doc/releases/${{ needs.version.outputs.tag }}.md"
           {
             echo "## 下载"
             echo
-            echo "Windows x64：下载 \`atis-for-can.exe\` 直接运行。已内置 .NET 运行时、语音发送进程、Opus、原生音频库和机场数据，无需另装 .NET 或 Python。"
+            echo "Windows x64：下载 \`atis-for-can-${{ needs.version.outputs.number }}-win-x64.zip\`，解压后运行 \`atis-for-can.exe\`。已内置 .NET 运行时、语音发送进程、Opus、原生音频库和机场数据，无需另装 .NET 或 Python。更新前请退出客户端，再替换程序文件。"
             echo
             echo "语音发送进程来自 [can-audio@${commit:0:7}](https://github.com/JianyueLab-Org/can-audio/tree/${commit}/atis-worker)（\`${CAN_AUDIO_REF}\` 分支）。"
             if [ -f "$notes" ]; then
@@ -195,5 +195,5 @@ jobs:
           body_path: release-notes.md
           generate_release_notes: true
           files: |
-            packages/atis-for-can.exe
+            packages/atis-for-can-${{ needs.version.outputs.number }}-win-x64.zip
             packages/SHA256SUMS

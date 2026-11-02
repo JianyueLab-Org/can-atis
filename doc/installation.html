@@ -11,7 +11,7 @@
 <ul>
 <li><a href="#_2">获取客户端</a></li>
 <li><a href="#windows">Windows 安装</a><ul>
-<li><a href="#_3">单文件版本</a></li>
+<li><a href="#_3">便携压缩包</a></li>
 </ul>
 </li>
 <li><a href="#_4">首次运行</a></li>
@@ -26,12 +26,13 @@
 </div>
 </details><h1 id="_1">安装与更新</h1>
 <h2 id="_2">获取客户端</h2>
-<p>从 <a href="https://github.com/JianyueLab-Org/can-atis/releases">GitHub Releases</a> 下载最新版 <strong>ATIS for CAN</strong>，或使用 CAN 管理员公布的发布渠道。请确认程序名为 <code>atis-for-can.exe</code>。原版 vATIS 的下载按钮安装的是原版客户端，不是 CAN 版。</p>
+<p>从 <a href="https://github.com/JianyueLab-Org/can-atis/releases">GitHub Releases</a> 下载最新版 <strong>ATIS for CAN</strong> 的 <code>atis-for-can-&lt;version&gt;-win-x64.zip</code>，或使用 CAN 管理员公布的发布渠道。解压后的程序名为 <code>atis-for-can.exe</code>。原版 vATIS 的下载按钮安装的是原版客户端，不是 CAN 版。</p>
+<p>已发布的 3.0.4 仅提供单独的 EXE，尚无 ZIP。以下压缩包安装说明适用于后续 ZIP 发布。CAN API 仅在对应版本 ZIP 发布后提供 ATIS 更新与下载。ZIP 发布与 API 资源映射须协调上线；先发布 ZIP 再切换映射可避免临时 503 响应。</p>
 <h2 id="windows">Windows 安装</h2>
-<h3 id="_3">单文件版本</h3>
+<h3 id="_3">便携压缩包</h3>
 <ol>
-<li>下载适用于 Windows x64 的 <code>atis-for-can.exe</code>。可以用同一 Release 里的 <code>SHA256SUMS</code> 核对文件。</li>
-<li>放到有写入权限的目录，双击运行。日志写在程序旁边的 <code>Logs</code> 文件夹。需要时可自行创建桌面快捷方式。</li>
+<li>下载适用于 Windows x64 的 <code>atis-for-can-&lt;version&gt;-win-x64.zip</code> 和同一 Release 里的 <code>SHA256SUMS</code>，核对 ZIP 文件的 SHA-256。</li>
+<li>将 ZIP 完整解压到有写入权限的目录，双击其中的 <code>atis-for-can.exe</code> 运行。日志写在程序旁边的 <code>Logs</code> 文件夹。需要时可自行创建桌面快捷方式。</li>
 </ol>
 <p><code>atis-for-can.exe</code> 已内置 .NET 运行时、原生音频库、机场数据，以及打包好的语音发送进程（含 Mumble 依赖和 Opus），无需另装 .NET 或 Python；首次运行会自动解压必要的运行组件。安装目录可以由用户选择，不沿用原版“必须安装在 org.vatsim.vatis”这一说明。</p>
 <p>源码运行和依赖安装见<a href="client/local-development.html">本地开发</a>。Windows 客户端的 TTS 使用系统已安装的 SAPI 语音，不依赖在线 TTS 服务；如果需要其他音色，请先在 Windows 的语音设置中安装对应语音包。</p>
@@ -49,7 +50,7 @@
 </code></pre>
 <p>其中包含 <code>AppConfig.json</code>、<code>Profiles</code>、<code>VoicePacks</code> 和 <code>Logs</code> 等内容。程序文件目录与用户数据目录不是同一概念。不要把自己的 <code>AppConfig.json</code> 放入公共发布包。</p>
 <h2 id="_6">更新客户端</h2>
-<p>源码保留了自动更新机制，但它只在兼容的安装包和更新源有效时工作。当前 CAN 更新源的服务端格式尚需与 Velopack 配套验证，因此不能保证每种包都会自动更新。</p>
+<p>客户端启动时通过 CAN API 检查新版本，便携包和单文件版本均可使用。仅在服务端确认有更高版本时提示；确认后打开 CAN 下载中转链接，不会自动下载、安装、重启或降级。检查失败不影响启动。</p>
 <p>压缩包用户可先退出程序、备份数据目录，再按照发布说明替换完整程序目录。<strong>客户端更新</strong>与<a href="client/automatic-profile-updates.html">配置文件自动更新</a>是不同机制。</p>
 <h2 id="_7">其他系统</h2>
 <p>支持目标为 Linux x64 和 macOS Apple Silicon（ARM64）。Linux 使用通用版本，Arch Linux 不单独打包。当前自动发布流程仅提供 Windows 包；其他平台以实际发布的对应安装包为准。</p>

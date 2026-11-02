@@ -119,11 +119,6 @@ public interface IAppConfig
     public bool AutoFetchDatis { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether to suppress the release notes window after updating.
-    /// </summary>
-    public bool SuppressReleaseNotes { get; set; }
-
-    /// <summary>
     /// Loads the configuration settings for the application.
     /// </summary>
     public void LoadConfig();

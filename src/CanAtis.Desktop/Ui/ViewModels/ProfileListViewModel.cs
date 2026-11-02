@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -32,7 +33,6 @@ using CanAtis.Ui.Services;
 using CanAtis.Ui.Services.Websocket;
 using CanAtis.Utils;
 using CanAtis.Voice.WavPack;
-using Velopack.Locators;
 
 namespace CanAtis.Ui.ViewModels;
 
@@ -442,22 +442,13 @@ public class ProfileListViewModel : ReactiveViewModelBase, IDisposable
 
         try
         {
-            var currentRelease = VelopackLocator.Current.GetLocalPackages()
-                .FirstOrDefault(x => x.Version == VelopackLocator.Current.CurrentlyInstalledVersion);
-            if (currentRelease?.NotesMarkdown != null)
+            var version = typeof(ProfileListViewModel).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            Process.Start(new ProcessStartInfo(
+                $"https://github.com/JianyueLab-Org/can-atis/releases/tag/v{Uri.EscapeDataString(version ?? string.Empty)}")
             {
-                var releaseNotes = _windowFactory.CreateReleaseNotesDialog();
-                if (releaseNotes.ViewModel != null)
-                {
-                    releaseNotes.ViewModel.SuppressReleaseNotes = _appConfig.SuppressReleaseNotes;
-                    releaseNotes.ViewModel.ReleaseNotes = currentRelease.NotesMarkdown;
-                    if (await releaseNotes.ShowDialog<DialogResult>((Window)_dialogOwner) == DialogResult.Ok)
-                    {
-                        _appConfig.SuppressReleaseNotes = releaseNotes.ViewModel.SuppressReleaseNotes;
-                        _appConfig.SaveConfig();
-                    }
-                }
-            }
+                UseShellExecute = true
+            });
         }
         catch (Exception ex)
         {
