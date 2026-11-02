@@ -67,7 +67,7 @@ public class ClientUpdaterTests
                 await stream.WriteAsync(body);
                 return request!.Split(' ')[1];
             });
-            var updater = new ClientUpdater(new Configuration($"http://127.0.0.1:{port}/api/v1/clients/latest?client=atis-for-can"), new Downloader());
+            var updater = new ClientUpdater(new Configuration($"http://localhost:{port}/api/v1/clients/latest?client=atis-for-can"), new Downloader());
             var update = await updater.Run();
             return (update, await serve.WaitAsync(TimeSpan.FromSeconds(15)));
         }

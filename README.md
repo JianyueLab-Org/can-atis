@@ -211,6 +211,8 @@ dotnet publish src/CanAtis.Desktop/CanAtis.Desktop.csproj -c Release -r win-x64 
 Copy `NativeAudio.dll` to the publish directory if it is not copied by the
 project file. The executable is `atis-for-can.exe`.
 
+Updater regression tests use an IPv4 loopback server addressed as `localhost`.
+
 ## Repository layout
 
 ```text
