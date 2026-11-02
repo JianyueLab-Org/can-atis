@@ -1,4 +1,4 @@
-# Builds release\can-atis-single-file\atis-for-can.exe.
+# Builds the Windows single-file executable and versioned portable ZIP.
 #
 # The Python voice worker is not in this repository: it lives in
 # JianyueLab-Org/can-audio under atis-worker/ and is maintained together with the
@@ -68,4 +68,22 @@ $exe = Join-Path $publish "atis-for-can.exe"
 $selfTest = Start-Process -FilePath $exe -ArgumentList "--self-test" -Wait -PassThru -NoNewWindow
 if ($selfTest.ExitCode -ne 0) { throw "atis-for-can.exe self-test failed (exit $($selfTest.ExitCode))" }
 Set-Content -Path (Join-Path $publish "can-audio-commit.txt") -Value $canAudioCommit -Encoding ascii -ErrorAction Stop
+if (-not $Version) {
+    [xml]$project = Get-Content "$PSScriptRoot\src\CanAtis.Desktop\CanAtis.Desktop.csproj" -Raw
+    $Version = [string]($project.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1)
+}
+if (-not $Version) { throw "Release version is missing" }
+$archive = Join-Path $PSScriptRoot "release\atis-for-can-$Version-win-x64.zip"
+Compress-Archive -Path "$publish\*" -DestinationPath $archive -Force -ErrorAction Stop
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::OpenRead($archive)
+try {
+    foreach ($required in @("atis-for-can.exe", "can-audio-commit.txt")) {
+        if (-not ($zip.Entries | Where-Object { $_.FullName -eq $required })) {
+            throw "Portable archive is missing $required at its root"
+        }
+    }
+}
+finally { $zip.Dispose() }
+Write-Output "Portable package: $archive"
 Write-Output "Single-file build: $exe"

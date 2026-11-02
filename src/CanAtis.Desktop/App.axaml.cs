@@ -37,7 +37,6 @@ using CanAtis.Ui.Startup;
 using CanAtis.Ui.ViewModels;
 using CanAtis.Updates;
 using CanAtis.Voice.Audio;
-using Velopack.Locators;
 
 namespace CanAtis;
 
@@ -154,11 +153,12 @@ public class App : Application
                 try
                 {
                     Log.Information("Checking for new client version...");
-                    if (await _serviceProvider.GetService<IClientUpdater>().Run())
+                    var update = await _serviceProvider.GetService<IClientUpdater>().Run();
+                    if (update != null && await MessageBox.ShowDialog(_startupWindow,
+                            $"发现新版本 {update.Version}。是否打开 CAN 下载链接？下载后请退出客户端，再替换程序文件。",
+                            "客户端更新", MessageBoxButton.YesNo, MessageBoxIcon.Information) == MessageBoxResult.Yes)
                     {
-                        await Log.CloseAndFlushAsync();
-                        Shutdown();
-                        return;
+                        Process.Start(new ProcessStartInfo(update.DownloadUrl) { UseShellExecute = true });
                     }
                 }
                 catch (HttpRequestException ex)
@@ -189,33 +189,6 @@ public class App : Application
 
                 await profileUpdatesTask;
                 await voicesTask;
-
-                // Show release notes of new version
-                if (Program.IsUpdated && !appConfig.SuppressReleaseNotes)
-                {
-                    try
-                    {
-                        var currentRelease = VelopackLocator.Current.GetLocalPackages()
-                            .FirstOrDefault(x => x.Version == VelopackLocator.Current.CurrentlyInstalledVersion);
-                        if (currentRelease?.NotesMarkdown != null)
-                        {
-                            var releaseNotes = _serviceProvider.GetService<ReleaseNotesDialog>();
-                            if (releaseNotes.ViewModel != null)
-                            {
-                                releaseNotes.ViewModel.ReleaseNotes = currentRelease.NotesMarkdown;
-                                if (await releaseNotes.ShowDialog<DialogResult>(_startupWindow) == DialogResult.Ok)
-                                {
-                                    appConfig.SuppressReleaseNotes = releaseNotes.ViewModel.SuppressReleaseNotes;
-                                    appConfig.SaveConfig();
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error showing release notes.");
-                    }
-                }
 
                 _startupWindow.Close();
 
