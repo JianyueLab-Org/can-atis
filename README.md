@@ -1,9 +1,9 @@
 # ATIS for CAN
 
-The current stable release is **3.0.4**, the latest official release of the C#
-desktop client. Download it from [GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases).
-That release provides a bare executable, not a ZIP. The updated Windows workflow
-produces a portable ZIP; extract it and run `atis-for-can.exe`.
+Download the current C# desktop client from
+[GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases).
+Windows releases provide a versioned portable ZIP and `SHA256SUMS`.
+Verify the checksum, extract the complete ZIP, and run `atis-for-can.exe`.
 
 ATIS for CAN is the ATIS desktop client for the **Cerulean Aviation Network**.
 It is based on the ATIS workflow and editor from the original project, but its
@@ -145,9 +145,8 @@ added to the release when present. A manual run (`workflow_dispatch`) only
 uploads the build as an Actions artifact.
 
 The CAN API provides ATIS updates and downloads only after the matching versioned
-ZIP is published. Coordinate the ZIP release and API mapping rollout; publishing
-the ZIP before switching the mapping avoids a temporary 503 response.
-Release 3.0.4 does not provide the ZIP required by that mapping.
+ZIP is published.
+Releases 3.0.4 and earlier do not provide the ZIP required by that mapping.
 
 At startup, portable and single-file clients check the CAN API JSON endpoint
 `https://ceruleanavi.net/api/v1/clients/latest?client=atis-for-can&version=<current>`.
