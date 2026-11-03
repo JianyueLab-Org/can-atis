@@ -4,7 +4,7 @@
 
 从 [GitHub Releases](https://github.com/JianyueLab-Org/can-atis/releases) 下载最新版 **ATIS for CAN** 的 `atis-for-can-<version>-win-x64.zip`，或使用 CAN 管理员公布的发布渠道。解压后的程序名为 `atis-for-can.exe`。原版 vATIS 的下载按钮安装的是原版客户端，不是 CAN 版。
 
-Windows 发布提供便携 ZIP 和 `SHA256SUMS`。历史版本 3.0.4 仅提供单独的 EXE，不适用以下压缩包安装说明。CAN API 仅在对应版本 ZIP 发布后提供 ATIS 更新与下载。
+Windows 发布提供便携 ZIP 和 `SHA256SUMS`。历史版本 3.0.4 及更早版本仅提供单独的 EXE，不适用以下压缩包安装说明。CAN API 仅在对应版本 ZIP 发布后提供 ATIS 更新与下载。
 
 ## Windows 安装
 

@@ -146,7 +146,7 @@ uploads the build as an Actions artifact.
 
 The CAN API provides ATIS updates and downloads only after the matching versioned
 ZIP is published.
-Release 3.0.4 does not provide the ZIP required by that mapping.
+Releases 3.0.4 and earlier do not provide the ZIP required by that mapping.
 
 At startup, portable and single-file clients check the CAN API JSON endpoint
 `https://ceruleanavi.net/api/v1/clients/latest?client=atis-for-can&version=<current>`.
