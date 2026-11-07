@@ -11,7 +11,7 @@ param(
     [string]$Python = "python",
     # A can-audio checkout. If it does not exist, CanAudioRef is cloned there.
     [string]$CanAudio = "$PSScriptRoot\build\can-audio",
-    [string]$CanAudioRef = "new-client-sys",
+    [string]$CanAudioRef = "main",
     # Defaults to <Version> in CanAtis.Desktop.csproj; CI passes the release number.
     [string]$Version = ""
 )

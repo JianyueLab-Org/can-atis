@@ -84,7 +84,7 @@ dotnet run --project src/CanAtis.Desktop
 
 The Python voice worker is **not in this repository**. It is maintained together
 with the Python side in [can-audio](https://github.com/JianyueLab-Org/can-audio)
-(`new-client-sys` branch, `atis-worker/`), and every build compiles the latest
+(`main` branch, `atis-worker/`), and every build compiles the latest
 version from there.
 
 ```powershell
@@ -92,7 +92,7 @@ version from there.
 ./build-single-file.ps1 -Python C:/path/to/python.exe -CanAudio C:/path/to/can-audio
 ```
 
-Without `-CanAudio`, the script clones can-audio's `new-client-sys` branch into
+Without `-CanAudio`, the script clones can-audio's `main` branch into
 `build/can-audio`. It runs can-audio's `atis-worker` tests, freezes the worker
 with PyInstaller as `can-voice-worker.exe`, publishes the single-file client,
 and runs `atis-for-can.exe --self-test`.

@@ -33,12 +33,12 @@ dotnet test src/CanAtis.Desktop.Tests/CanAtis.Desktop.Tests.csproj
 
 ## 语音发送进程
 
-网络播音由一个 Python 进程完成：它连上 Mumble、进入频率频道并循环播报客户端合成好的音频。这部分**不在本仓库**，由 C# 与 Python 开发共同维护在 can-audio 仓库 `new-client-sys` 分支的 [`atis-worker/`](https://github.com/JianyueLab-Org/can-audio/tree/new-client-sys/atis-worker) 目录，命令行参数、输入输出和退出码见那里的 README。
+网络播音由一个 Python 进程完成：它连上 Mumble、进入频率频道并循环播报客户端合成好的音频。这部分**不在本仓库**，由 C# 与 Python 开发共同维护在 can-audio 仓库 `main` 分支的 [`atis-worker/`](https://github.com/JianyueLab-Org/can-audio/tree/main/atis-worker) 目录，命令行参数、输入输出和退出码见那里的 README。
 
 发行版把它打成 `can-voice-worker.exe` 嵌在 `atis-for-can.exe` 里。从源码运行时没有嵌入的进程，需要用环境变量指过去：
 
 ```powershell
-git clone -b new-client-sys https://github.com/JianyueLab-Org/can-audio.git ..\..\fsd\can-audio
+git clone -b main https://github.com/JianyueLab-Org/can-audio.git ..\..\fsd\can-audio
 py -3.12 -m venv ..\..\fsd\can-audio\.venv
 $env:PYTHONUTF8 = 1
 ..\..\fsd\can-audio\.venv\Scripts\python.exe -m pip install -r ..\..\fsd\can-audio\requirements-voice.txt
@@ -57,7 +57,7 @@ dotnet run --project src/CanAtis.Desktop/CanAtis.Desktop.csproj
 .\build-single-file.ps1 -Python ..\..\fsd\can-audio\.venv\Scripts\python.exe -CanAudio ..\..\fsd\can-audio
 ```
 
-不给 `-CanAudio` 时脚本会把 can-audio 的 `new-client-sys` 分支克隆到 `build\can-audio`。脚本依次跑 can-audio 的 atis-worker 测试、用 PyInstaller 打包语音进程并自检、`dotnet publish` 单文件，最后运行 `atis-for-can.exe --self-test`。产物在 `release\can-atis-single-file\atis-for-can.exe`，同目录的 `can-audio-commit.txt` 记录了用的是 can-audio 的哪个提交。
+不给 `-CanAudio` 时脚本会把 can-audio 的 `main` 分支克隆到 `build\can-audio`。脚本依次跑 can-audio 的 atis-worker 测试、用 PyInstaller 打包语音进程并自检、`dotnet publish` 单文件，最后运行 `atis-for-can.exe --self-test`。产物在 `release\can-atis-single-file\atis-for-can.exe`，同目录的 `can-audio-commit.txt` 记录了用的是 can-audio 的哪个提交。
 
 脚本同时生成 `release\atis-for-can-<version>-win-x64.zip`，包含完整发布目录，根目录保留 `atis-for-can.exe` 和 `can-audio-commit.txt`。Release 的 `SHA256SUMS` 校验此 ZIP；下载后先核对 ZIP 的 SHA-256，再完整解压并运行 `atis-for-can.exe`。
 
