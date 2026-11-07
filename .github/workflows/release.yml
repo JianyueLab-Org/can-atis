@@ -38,7 +38,7 @@ concurrency:
 
 env:
   SERIES: "3.0"                  # 自动递增只在这个系列里进行；要和 csproj 的 <Version> 同系列
-  CAN_AUDIO_REF: new-client-sys  # 语音发送进程从 can-audio 的这个分支拉
+  CAN_AUDIO_REF: main  # 语音发送进程从 can-audio 的这个分支拉
   # runner 的 stdout 默认是 cp1252，而 can-audio 的 requirements 和测试输出里有中文
   PYTHONUTF8: '1'
   DOTNET_CLI_TELEMETRY_OPTOUT: '1'
