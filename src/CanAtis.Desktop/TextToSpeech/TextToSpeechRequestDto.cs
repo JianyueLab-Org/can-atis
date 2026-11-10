@@ -6,32 +6,32 @@
 namespace CanAtis.TextToSpeech;
 
 /// <summary>
-/// Represents a Data Transfer Object (DTO) for a text-to-speech request.
+/// Represents a synthesis request to the CAN TTS service (<c>POST /speech/synthesize</c>).
 /// </summary>
 public class TextToSpeechRequestDto
 {
     /// <summary>
-    /// Gets or sets the station identifier.
-    /// </summary>
-    public string? Station { get; set; }
-
-    /// <summary>
-    /// Gets or sets the text to be converted to speech.
+    /// Gets or sets the English (ASCII) text to be converted to speech.
     /// </summary>
     public string? Text { get; set; }
 
     /// <summary>
-    /// Gets or sets the voice identifier for the text-to-speech request.
+    /// Gets or sets the voice identifier, e.g. <c>huge-harry</c>.
     /// </summary>
     public string? Voice { get; set; }
 
     /// <summary>
-    /// Gets or sets the speech rate multiplier.
+    /// Gets or sets the speech rate in words per minute (120–240).
     /// </summary>
-    public double? SpeechRate { get; set; }
+    public int SpeechRate { get; set; } = 180;
 
     /// <summary>
-    /// Gets or sets the JSON Web Token (JWT) used for authentication.
+    /// Gets or sets the CAN ID used to authenticate the request.
     /// </summary>
-    public string? Jwt { get; set; }
+    public string? Cid { get; set; }
+
+    /// <summary>
+    /// Gets or sets the CAN network password used to authenticate the request.
+    /// </summary>
+    public string? Password { get; set; }
 }

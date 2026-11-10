@@ -42,25 +42,22 @@ use VATSIM authentication, the vATIS SignalR hub, or a VATSIM voice REST API.
 
 ## Text to Speech
 
-The client loads the original vATIS catalogue from
-`https://hub.vatis.app/speech/voices`: Default, US Male/Female, UK Male/Female,
-and AU Male/Female. Select **Text to Speech** in the station configuration,
-choose a voice and speech rate, save, and use **Sandbox** to preview audio.
+Text to Speech uses the CAN TTS service ([can-tts](https://github.com/JianyueLab/can-tts),
+DECtalk **Huge Harry**). Select **Text to Speech** in the station configuration, choose
+a voice and speech rate (120–240 WPM), save, and use **Sandbox** to preview audio.
 
-**Synthesis for general CAN users is not yet configured.** The original service
-requires a VATSIM JWT; listing its voices does not make synthesis available.
-The client does not read the original vATIS account or request VATSIM tokens.
-`CAN_TTS_JWT` can supply a service token for integration testing; manually supplied
-tokens are not automatically refreshed. A shared CAN deployment needs its own
-speech backend and authentication integration.
+```text
+Synthesis: https://tts.ceruleanavi.net/speech/synthesize
+Voices:    https://tts.ceruleanavi.net/speech/voices
+```
 
-For a compatible CAN-hosted service, set `CAN_TTS_URL` and `CAN_TTS_VOICES_URL`
-to its synthesis and catalogue endpoints and provide its token in `CAN_TTS_JWT`.
-The protocol matches vATIS: JSON requests with Text, Voice, SpeechRate and Jwt,
-and raw mono 48 kHz signed 16-bit little-endian PCM responses. The catalogue
-uses `[{"name":"US Male","id":"us-male"}, ...]`. Matching catalogue labels alone
-does not supply the original voice models; the configured service must actually
-provide those voices.
+Each synthesis request carries the CAN ID and network password from **User Settings**;
+the service verifies them with the CAN auth API before synthesizing. The response is
+raw mono 48 kHz signed 16-bit little-endian PCM. The service accepts English ASCII text
+only, so Chinese voice ATIS content needs a WAV voice pack or a recording.
+
+`CAN_TTS_URL` and `CAN_TTS_VOICES_URL` override the endpoints, for example
+`http://127.0.0.1:8080/speech/synthesize` for a local can-tts instance.
 
 ## Build on Windows
 
