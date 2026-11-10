@@ -30,6 +30,12 @@ public class TextToSpeechServiceTests
     }
 
     [Fact]
+    public void PrepareText_RejectsTextWithNothingSpeakable()
+    {
+        Assert.Throws<AtisBuilderException>(() => TextToSpeechService.PrepareText("[ ]́"));
+    }
+
+    [Fact]
     public void PrepareText_RejectsChinese()
     {
         Assert.Throws<AtisBuilderException>(() => TextToSpeechService.PrepareText("广州 INFORMATION ALPHA"));
@@ -125,8 +131,11 @@ public class TextToSpeechServiceTests
 
         public TextToSpeechService CreateService(IAppConfig config)
         {
+            // The endpoints are read once in the constructor; restore whatever was set before.
             lock (s_envLock)
             {
+                var previousUrl = Environment.GetEnvironmentVariable("CAN_TTS_URL");
+                var previousVoicesUrl = Environment.GetEnvironmentVariable("CAN_TTS_VOICES_URL");
                 Environment.SetEnvironmentVariable("CAN_TTS_URL", _baseUrl + "speech/synthesize");
                 Environment.SetEnvironmentVariable("CAN_TTS_VOICES_URL", _baseUrl + "speech/voices");
                 try
@@ -135,8 +144,8 @@ public class TextToSpeechServiceTests
                 }
                 finally
                 {
-                    Environment.SetEnvironmentVariable("CAN_TTS_URL", null);
-                    Environment.SetEnvironmentVariable("CAN_TTS_VOICES_URL", null);
+                    Environment.SetEnvironmentVariable("CAN_TTS_URL", previousUrl);
+                    Environment.SetEnvironmentVariable("CAN_TTS_VOICES_URL", previousVoicesUrl);
                 }
             }
         }

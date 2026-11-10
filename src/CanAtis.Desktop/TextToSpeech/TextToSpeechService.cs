@@ -39,6 +39,8 @@ public class TextToSpeechService : ITextToSpeechService
     private const int MaxTextLength = 10_000;
     private const int MaxPcmBytes = 32 * 1024 * 1024;
     private const int MaxBusyRetries = 2;
+    private static readonly TimeSpan s_defaultRetryDelay = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan s_maxRetryDelay = TimeSpan.FromSeconds(10);
 
     private static readonly VoiceMetaData s_fallbackVoice = new() { Name = "Huge Harry", Id = DefaultVoiceId };
 
@@ -153,7 +155,11 @@ public class TextToSpeechService : ITextToSpeechService
                 var error = await ReadError(response, cancellationToken);
                 if (response.StatusCode == HttpStatusCode.ServiceUnavailable && attempt < MaxBusyRetries)
                 {
-                    var delay = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(2);
+                    // Never trust the server's Retry-After blindly; keep the wait short and bounded.
+                    var delay = response.Headers.RetryAfter?.Delta ?? s_defaultRetryDelay;
+                    if (delay < TimeSpan.Zero || delay > s_maxRetryDelay)
+                        delay = delay < TimeSpan.Zero ? s_defaultRetryDelay : s_maxRetryDelay;
+
                     await Task.Delay(delay + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 500)), cancellationToken);
                     continue;
                 }
@@ -208,6 +214,9 @@ public class TextToSpeechService : ITextToSpeechService
         }
 
         var result = builder.ToString().Trim();
+        if (result.Length == 0)
+            throw new AtisBuilderException("The voice ATIS has no speakable English text.");
+
         if (result.Length > MaxTextLength)
             throw new AtisBuilderException($"The voice ATIS is longer than {MaxTextLength} characters.");
 
