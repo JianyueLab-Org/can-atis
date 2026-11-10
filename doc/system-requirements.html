@@ -20,7 +20,7 @@
 <li><strong>Windows</strong>：推荐 Windows 10 / 11，64 位（x64）。使用与系统架构匹配的 CAN 发布包。</li>
 <li><strong>网络</strong>：连接 CAN FSD、Mumble 和数据服务。Mumble 的控制连接需要 TCP，UDP 语音还取决于客户端实现和网络条件。</li>
 <li><strong>音频设备</strong>：试听需要播放设备；人工录音需要麦克风和相应的系统权限。</li>
-<li><strong>语音组件</strong>：Windows 版本的 TTS 使用系统内置 Windows SAPI，不需要联网的 TTS 服务或额外语音模型；Mumble 音频发送所需的语音进程和 Opus 已内置在 <code>atis-for-can.exe</code> 中。</li>
+<li><strong>语音组件</strong>：TTS 使用在线 CAN TTS 服务（<code>https://tts.ceruleanavi.net</code>），需联网且使用 CAN ID 和网络密码鉴权，不需要本地语音模型；Mumble 音频发送所需的语音进程和 Opus 已内置在 <code>atis-for-can.exe</code> 中。</li>
 </ul>
 <h2 id="_3">从源码构建</h2>
 <p>需要 .NET 10 SDK、Visual Studio 的“使用 C++ 的桌面开发”工作负载、CMake 和 Ninja。构建步骤见<a href="client/local-development.html">本地开发</a>。</p>

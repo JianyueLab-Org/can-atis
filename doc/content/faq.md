@@ -21,9 +21,9 @@ Windows 默认：
 
 CAN 网络连接需要 CAN ID 和 CAN 网络密码。公共发布包不包含个人账号，也不会读取原版 vATIS 保存的账号。
 
-## 为什么有原版音色列表，却不能合成？
+## TTS 用的是什么服务？
 
-Windows 客户端现在直接读取本机 SAPI 语音列表并使用本地合成，不需要原版远端服务或 JWT。可用音色取决于 Windows 已安装的语音包。
+客户端使用 CAN TTS 服务（`https://tts.ceruleanavi.net`，DECtalk Huge Harry 音色）在线合成，不需要原版 vATIS 服务或 JWT。每次合成会携带用户设置中的 CAN ID 和网络密码，由服务端向 CAN 官方接口验证。该服务只支持英文文本；中文语音 ATIS 请使用 WAV 语音包或人工录音。
 
 ## 有哪些语音方式？
 

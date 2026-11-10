@@ -15,7 +15,7 @@ Windows 发布提供便携 ZIP 和 `SHA256SUMS`。历史版本 3.0.4 及更早�
 
 `atis-for-can.exe` 已内置 .NET 运行时、原生音频库、机场数据，以及打包好的语音发送进程（含 Mumble 依赖和 Opus），无需另装 .NET 或 Python；首次运行会自动解压必要的运行组件。安装目录可以由用户选择，不沿用原版“必须安装在 org.vatsim.vatis”这一说明。
 
-源码运行和依赖安装见[本地开发](client/local-development.md)。Windows 客户端的 TTS 使用系统已安装的 SAPI 语音，不依赖在线 TTS 服务；如果需要其他音色，请先在 Windows 的语音设置中安装对应语音包。
+源码运行和依赖安装见[本地开发](client/local-development.md)。TTS 使用在线 CAN TTS 服务（Huge Harry 音色），需要联网并在用户设置中填写 CAN ID 和网络密码。
 
 ## 首次运行
 
