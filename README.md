@@ -222,4 +222,4 @@ build-single-file.ps1     Windows self-contained single-file release build
 
 ## License
 
-This project is distributed under the GPLv3 license. See [LICENSE](LICENSE).
+This project is distributed under the GPLv3 license. See the [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.html).
