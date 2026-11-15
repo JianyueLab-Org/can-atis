@@ -68,6 +68,7 @@ $exe = Join-Path $publish "atis-for-can.exe"
 $selfTest = Start-Process -FilePath $exe -ArgumentList "--self-test" -Wait -PassThru -NoNewWindow
 if ($selfTest.ExitCode -ne 0) { throw "atis-for-can.exe self-test failed (exit $($selfTest.ExitCode))" }
 Set-Content -Path (Join-Path $publish "can-audio-commit.txt") -Value $canAudioCommit -Encoding ascii -ErrorAction Stop
+Copy-Item -Path (Join-Path $PSScriptRoot "LICENSE") -Destination (Join-Path $publish "LICENSE.txt") -ErrorAction Stop
 if (-not $Version) {
     [xml]$project = Get-Content "$PSScriptRoot\src\CanAtis.Desktop\CanAtis.Desktop.csproj" -Raw
     $Version = [string]($project.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1)
@@ -78,7 +79,7 @@ Compress-Archive -Path "$publish\*" -DestinationPath $archive -Force -ErrorActio
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::OpenRead($archive)
 try {
-    foreach ($required in @("atis-for-can.exe", "can-audio-commit.txt")) {
+    foreach ($required in @("atis-for-can.exe", "can-audio-commit.txt", "LICENSE.txt")) {
         if (-not ($zip.Entries | Where-Object { $_.FullName -eq $required })) {
             throw "Portable archive is missing $required at its root"
         }

@@ -222,4 +222,5 @@ build-single-file.ps1     Windows self-contained single-file release build
 
 ## License
 
-This project is distributed under the GPLv3 license. See the [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.html).
+GPL-3.0-or-later. Modified from [vATIS](https://github.com/vatis-project/vatis)
+(© 2024 Justin Shannon); see [LICENSE](LICENSE) for the notice and full text.

@@ -31,6 +31,7 @@ ATIS-for-CAN-main/
 │   └── win-x64/              # Windows x64 发布版本
 ├── CanAtis.sln               # 解决方案文件 (原 vATIS.slnx)
 ├── README.md
+├── LICENSE
 └── REFACTORING_NOTES.md      # 本文件
 ```
 
