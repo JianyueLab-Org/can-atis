@@ -582,7 +582,12 @@ public class NetworkConnection : INetworkConnection, IDisposable
             NetworkRating.Obs, _airportData.Latitude, _airportData.Longitude));
     }
 
-    private List<string> FormatAtisText(string atisText)
+    /// <summary>
+    /// Splits text ATIS into the lines sent in an FSD ATIS query response.
+    /// </summary>
+    /// <param name="atisText">The text ATIS.</param>
+    /// <returns>The lines to send, each at most 64 characters unless the text already has line breaks.</returns>
+    public static List<string> FormatAtisText(string atisText)
     {
         // Check if the text contains any line breaks
         if (atisText.Contains('\n') || atisText.Contains('\r'))
@@ -590,11 +595,29 @@ public class NetworkConnection : INetworkConnection, IDisposable
             // Use existing line breaks
             return [.. atisText.Split(["\r\n", "\n", "\r"], StringSplitOptions.None)];
         }
-        else
+
+        // Break up the text into lines of at most 64 characters. Prefer breaking at whitespace; Chinese text
+        // has no spaces, so fall back to a hard break instead of dropping the start of the text.
+        const int maxLineLength = 64;
+        var lines = new List<string>();
+        var remaining = atisText.Trim();
+        while (remaining.Length > maxLineLength)
         {
-            // Break up the text into 64-character lines if no line breaks are present
-            var regex = new Regex(@"(.{1,64})(?:\s|$)");
-            return regex.Matches(atisText).Select(x => x.Groups[1].Value).ToList();
+            var cut = remaining.LastIndexOf(' ', maxLineLength);
+            if (cut <= 0)
+            {
+                cut = maxLineLength;
+                if (char.IsHighSurrogate(remaining[cut - 1]))
+                    cut--;
+            }
+
+            lines.Add(remaining[..cut].TrimEnd());
+            remaining = remaining[cut..].TrimStart();
         }
+
+        if (remaining.Length > 0)
+            lines.Add(remaining);
+
+        return lines;
     }
 }

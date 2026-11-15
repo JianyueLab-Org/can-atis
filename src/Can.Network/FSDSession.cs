@@ -65,6 +65,11 @@ public class FsdSession
     private Socket? _clientSocket;
     private AsyncCallback? _incomingDataCallBack;
     private string _partialPacket = "";
+
+    // CAN FSD carries UTF-8 so Chinese ATIS text, ATC info and messages survive the round trip.
+    // One decoder per connection keeps multibyte characters intact when they are split across reads.
+    private static readonly Encoding s_wireEncoding = new UTF8Encoding(false);
+    private Decoder _decoder = s_wireEncoding.GetDecoder();
     private readonly object? _userData;
     private SynchronizationContext? _syncContext;
 
@@ -897,6 +902,9 @@ public class FsdSession
 
     public void Connect(string address, int port)
     {
+        _partialPacket = string.Empty;
+        _decoder = s_wireEncoding.GetDecoder();
+
         try
         {
             _clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -912,8 +920,6 @@ public class FsdSession
             RaiseNetworkError($"Connection failed: {se.Message}");
             RaiseNetworkConnectionFailed();
         }
-
-        _partialPacket = string.Empty;
     }
 
     private void BeginConnect(IPAddress ip, int port)
@@ -1005,7 +1011,7 @@ public class FsdSession
         }
         try
         {
-            var bytes = Encoding.Latin1.GetBytes(data);
+            var bytes = s_wireEncoding.GetBytes(data);
             _clientSocket?.BeginSend(bytes, 0, bytes.Length, SocketFlags.None, SendCallback, _clientSocket);
 
             RaiseRawDataSent(data);
@@ -1105,10 +1111,9 @@ public class FsdSession
                 DisconnectIfCurrent(socket);
                 return;
             }
-            var chars = new char[bytesReceived + 1];
-            Decoder d = Encoding.Latin1.GetDecoder();
-            d.GetChars(theSockId.DataBuffer, 0, bytesReceived, chars, 0);
-            string data = new(chars);
+            var chars = new char[_decoder.GetCharCount(theSockId.DataBuffer, 0, bytesReceived)];
+            var charCount = _decoder.GetChars(theSockId.DataBuffer, 0, bytesReceived, chars, 0);
+            string data = new(chars, 0, charCount);
             ProcessData(data);
             WaitForData();
         }
